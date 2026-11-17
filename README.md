@@ -49,14 +49,15 @@ frequente de produtos.
 1. Crie a conta em [supabase.com](https://supabase.com) e clique em **New project**.
    - Name: `restaurante`
    - Database Password: gere uma senha forte e **guarde**, ela entra na connection string
-   - Region: `South America (São Paulo)`
+   - Region: `East US (North Virginia)` — a mesma região do backend no Render, porque a latência
+     que mais pesa é a entre a API e o banco
 2. Crie as tabelas: menu lateral **SQL Editor** → **New query** → cole o conteúdo de
    `supabase/schema.sql` → **Run**.
 3. Pegue a connection string: **Project Settings** → **Database** → **Connection string** → aba
    **URI**, modo **Session pooler**. O formato é:
 
    ```
-   postgresql://postgres.abcdefgh:SUA_SENHA@aws-0-sa-east-1.pooler.supabase.com:5432/postgres
+   postgresql://postgres.abcdefgh:SUA_SENHA@aws-0-us-east-1.pooler.supabase.com:5432/postgres
    ```
 
    Troque `[YOUR-PASSWORD]` pela senha do passo 1. Use o **pooler**, não a conexão direta: o plano
