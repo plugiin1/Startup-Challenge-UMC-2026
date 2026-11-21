@@ -44,6 +44,9 @@ export const api = {
     request('/comandas', { method: 'POST', body: { mesa, cliente } }),
   lancarItem: (id, item) =>
     request(`/comandas/${id}/itens`, { method: 'POST', body: item }),
+  removerItem: (id, itemId) =>
+    request(`/comandas/${id}/itens/${itemId}`, { method: 'DELETE' }),
+  cancelarComanda: (id) => request(`/comandas/${id}/cancelar`, { method: 'POST' }),
   fecharComanda: (id, pagamentos) =>
     request(`/comandas/${id}/fechar`, { method: 'POST', body: { pagamentos } }),
 
