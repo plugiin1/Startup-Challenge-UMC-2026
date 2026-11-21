@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { Boxes, AlertTriangle, PackagePlus } from 'lucide-react'
 import { api } from '../services/api'
+import { fadeUp } from '../lib/ui'
 
 export default function Estoque() {
   const [insumos, setInsumos] = useState([])
@@ -24,11 +27,7 @@ export default function Estoque() {
   const movimentar = async (e) => {
     e.preventDefault()
     try {
-      await api.movimentarEstoque({
-        insumo_id: Number(insumoId),
-        tipo,
-        qtd: Number(qtd),
-      })
+      await api.movimentarEstoque({ insumo_id: Number(insumoId), tipo, qtd: Number(qtd) })
       setQtd('')
       await carregar()
     } catch (err) {
@@ -40,64 +39,97 @@ export default function Estoque() {
 
   return (
     <div>
-      <h2>Estoque</h2>
-      {erro && <p className="erro">{erro}</p>}
+      <div className="page-head">
+        <div className="eyebrow">Estoque</div>
+        <h1>Controle de estoque</h1>
+        <p>A cada venda o sistema dá baixa sozinho. Você só repõe o que ele avisar que está acabando.</p>
+      </div>
 
       {emAlerta.length > 0 && (
-        <div className="card alerta">
-          <strong>Repor hoje:</strong> {emAlerta.map((i) => i.nome).join(', ')}
-        </div>
+        <motion.div className="alert-bar" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+          <AlertTriangle />
+          <span>
+            <b>Repor hoje:</b> {emAlerta.map((i) => i.nome).join(', ')}
+          </span>
+        </motion.div>
       )}
 
-      <section className="card">
-        <form className="form-item" onSubmit={movimentar}>
-          <select value={insumoId} onChange={(e) => setInsumoId(e.target.value)} required>
-            <option value="">Insumo...</option>
-            {insumos.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.nome}
-              </option>
-            ))}
-          </select>
-          <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
-            <option value="ENTRADA">Entrada</option>
-            <option value="SAIDA">Saída</option>
-            <option value="AJUSTE">Ajuste</option>
-          </select>
-          <input
-            type="number"
-            step="0.001"
-            placeholder="Quantidade"
-            value={qtd}
-            onChange={(e) => setQtd(e.target.value)}
-            required
-          />
-          <button className="primary">Registrar</button>
-        </form>
+      <div className="grid grid-2">
+        <motion.section className="glass glass-pad" {...fadeUp}>
+          <div className="card-title">
+            <span className="ico"><PackagePlus /></span>
+            <h3>Movimentar estoque</h3>
+          </div>
+          <form className="stack" onSubmit={movimentar}>
+            <label className="field">
+              Insumo
+              <select value={insumoId} onChange={(e) => setInsumoId(e.target.value)} required>
+                <option value="">Escolha...</option>
+                {insumos.map((i) => (
+                  <option key={i.id} value={i.id}>{i.nome}</option>
+                ))}
+              </select>
+            </label>
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <label className="field">
+                Tipo
+                <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+                  <option value="ENTRADA">Entrada</option>
+                  <option value="SAIDA">Saída</option>
+                  <option value="AJUSTE">Ajuste</option>
+                </select>
+              </label>
+              <label className="field">
+                Quantidade
+                <input type="number" step="0.001" placeholder="0" value={qtd} onChange={(e) => setQtd(e.target.value)} required />
+              </label>
+            </div>
+            {erro && <p className="form-msg-erro">{erro}</p>}
+            <button className="btn btn-primary btn-block">Registrar movimento</button>
+          </form>
+        </motion.section>
 
-        <table className="tabela">
-          <thead>
-            <tr>
-              <th>Insumo</th>
-              <th>Atual</th>
-              <th>Mínimo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {insumos.map((i) => (
-              <tr key={i.id} className={i.abaixo_do_minimo ? 'destaque' : ''}>
-                <td>{i.nome}</td>
-                <td className="valor">
-                  {i.qtd_atual} {i.unidade}
-                </td>
-                <td className="valor muted">
-                  {i.qtd_minima} {i.unidade}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+        <motion.section className="glass glass-pad" {...fadeUp}>
+          <div className="card-title">
+            <span className="ico"><Boxes /></span>
+            <h3>Insumos</h3>
+            {emAlerta.length > 0 && (
+              <span className="chip danger" style={{ marginLeft: 'auto' }}>
+                <span className="chip-dot" /> {emAlerta.length} em alerta
+              </span>
+            )}
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Insumo</th>
+                  <th className="num">Atual</th>
+                  <th className="num">Mínimo</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {insumos.map((i) => (
+                  <tr key={i.id} className={i.abaixo_do_minimo ? 'row-alert' : ''}>
+                    <td>{i.nome}</td>
+                    <td className="num mono">{i.qtd_atual} {i.unidade}</td>
+                    <td className="num mono muted">{i.qtd_minima} {i.unidade}</td>
+                    <td className="num">
+                      <span className={`chip ${i.abaixo_do_minimo ? 'danger' : 'ok'}`}>
+                        <span className="chip-dot" />{i.abaixo_do_minimo ? 'baixo' : 'ok'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {insumos.length === 0 && (
+                  <tr><td colSpan={4} className="muted" style={{ textAlign: 'center', padding: 24 }}>Nenhum insumo cadastrado.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </motion.section>
+      </div>
     </div>
   )
 }
