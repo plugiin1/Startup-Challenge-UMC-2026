@@ -112,14 +112,30 @@ def remover_item(
     comanda_id: int,
     item_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(exigir_perfil("CAIXA")),
+    usuario: Usuario = Depends(exigir_perfil(*OPERADORES)),
 ) -> None:
     item = db.get(ItemComanda, item_id)
     if item is None or item.comanda_id != comanda_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Item nao encontrado nesta comanda")
     if item.comanda.status != "ABERTA":
         raise HTTPException(status.HTTP_409_CONFLICT, "Esta comanda nao esta aberta")
+    estoque_service.estornar_insumos_do_item(db, item, usuario.id)
     db.delete(item)
+    db.commit()
+
+@router.post("/{comanda_id}/cancelar", status_code=status.HTTP_204_NO_CONTENT)
+def cancelar_comanda(
+    comanda_id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(exigir_perfil(*OPERADORES)),
+) -> None:
+    comanda = _buscar_comanda(db, comanda_id)
+    if comanda.status != "ABERTA":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Esta comanda nao esta aberta")
+    for item in comanda.itens:
+        estoque_service.estornar_insumos_do_item(db, item, usuario.id)
+    comanda.status = "CANCELADA"
+    comanda.fechada_em = datetime.now(UTC)
     db.commit()
 
 @router.post("/{comanda_id}/fechar", response_model=ComandaOut)
