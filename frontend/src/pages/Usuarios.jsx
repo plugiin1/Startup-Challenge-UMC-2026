@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { UserPlus, Power } from 'lucide-react'
+import { UserPlus, Power, Trash2 } from 'lucide-react'
 import { api } from '../services/api'
 import { Modal, Spinner } from '../lib/ui'
 
@@ -36,6 +36,22 @@ export default function Usuarios() {
   const alternar = async (id) => {
     try {
       await api.alternarUsuario(id)
+      carregar()
+    } catch (e) {
+      setErro(e.message)
+    }
+  }
+
+  const excluir = async (u) => {
+    const ok = window.confirm(
+      `Excluir ${u.nome} de vez?
+
+O histórico de vendas e de caixa continua salvo, mas sem o nome dele. Essa ação não pode ser desfeita.`,
+    )
+    if (!ok) return
+    setErro('')
+    try {
+      await api.removerUsuario(u.id)
       carregar()
     } catch (e) {
       setErro(e.message)
@@ -91,9 +107,14 @@ export default function Usuarios() {
                   </td>
                   <td className="num">
                     {u.perfil !== 'GERENTE' && (
-                      <button className="btn btn-sm btn-ghost" onClick={() => alternar(u.id)}>
-                        <Power size={14} /> {u.ativo ? 'Desativar' : 'Ativar'}
-                      </button>
+                      <div className="row" style={{ justifyContent: 'flex-end', gap: 6 }}>
+                        <button className="btn btn-sm btn-ghost" onClick={() => alternar(u.id)}>
+                          <Power size={14} /> {u.ativo ? 'Desativar' : 'Ativar'}
+                        </button>
+                        <button className="btn btn-sm btn-ghost danger" title="Excluir usuário" onClick={() => excluir(u)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import exigir_perfil, usuario_atual
 from app.core.security import criar_token, hash_senha, verificar_senha
 from app.database import get_db
-from app.models import Usuario
+from app.models import Caixa, Comanda, MovEstoque, Usuario
 from app.schemas import TokenOut, UsuarioIn, UsuarioOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -74,3 +74,27 @@ def alternar_usuario(
     db.commit()
     db.refresh(alvo)
     return alvo
+
+@router.delete("/usuarios/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_usuario(
+    usuario_id: int,
+    db: Session = Depends(get_db),
+    gerente: Usuario = Depends(exigir_perfil("GERENTE")),
+) -> None:
+    alvo = db.get(Usuario, usuario_id)
+    if alvo is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario nao encontrado")
+    if alvo.id == gerente.id:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Voce nao pode excluir a si mesmo")
+
+    db.query(Comanda).filter(Comanda.usuario_id == usuario_id).update(
+        {Comanda.usuario_id: None}, synchronize_session=False
+    )
+    db.query(Caixa).filter(Caixa.usuario_id == usuario_id).update(
+        {Caixa.usuario_id: None}, synchronize_session=False
+    )
+    db.query(MovEstoque).filter(MovEstoque.usuario_id == usuario_id).update(
+        {MovEstoque.usuario_id: None}, synchronize_session=False
+    )
+    db.delete(alvo)
+    db.commit()

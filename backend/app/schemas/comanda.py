@@ -25,6 +25,7 @@ class ItemComandaOut(BaseModel):
     id: int
     produto_id: int
     produto_nome: str = ""
+    produto_tipo: str = "UNIDADE"
     qtd: float
     peso_kg: float | None
     preco_unit: float
@@ -43,6 +44,9 @@ class ComandaResumoOut(BaseModel):
     status: StatusComanda
     aberta_em: datetime
     fechada_em: datetime | None
+    servidor_publico: bool = False
+    total_bruto: float = 0
+    desconto: float = 0
     total: float
 
 class ComandaOut(ComandaResumoOut):
@@ -50,6 +54,7 @@ class ComandaOut(ComandaResumoOut):
 
 class FecharComandaIn(BaseModel):
     pagamentos: list[PagamentoIn] = Field(min_length=1)
+    servidor_publico: bool = False
 
 class StatusCozinhaIn(BaseModel):
     status_cozinha: StatusCozinha

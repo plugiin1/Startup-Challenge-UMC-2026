@@ -7,7 +7,6 @@ import Logo from './components/Logo'
 import Caixa from './pages/Caixa'
 import Cardapio from './pages/Cardapio'
 import Comandas from './pages/Comandas'
-import Configuracoes from './pages/Configuracoes'
 import Estoque from './pages/Estoque'
 import Login from './pages/Login'
 import Relatorios from './pages/Relatorios'
@@ -21,7 +20,6 @@ const MENU = [
   { path: '/relatorios', nome: 'Relatórios', perfis: ['GERENTE', 'CAIXA'] },
   { path: '/cardapio', nome: 'Cardápio', perfis: ['GERENTE'] },
   { path: '/usuarios', nome: 'Usuários', perfis: ['GERENTE'] },
-  { path: '/config', nome: 'Configurações', perfis: ['GERENTE'] },
 ]
 
 const PERFIL_COR = {
@@ -122,7 +120,6 @@ function Rotas() {
           <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/cardapio" element={<Cardapio />} />
           <Route path="/usuarios" element={<Usuarios />} />
-          <Route path="/config" element={<Configuracoes />} />
           <Route path="*" element={<Navigate to={inicial} replace />} />
         </Routes>
       </main>

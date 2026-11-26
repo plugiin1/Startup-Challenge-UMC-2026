@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Boxes, AlertTriangle, PackagePlus, Plus, Pencil } from 'lucide-react'
+import { Boxes, AlertTriangle, PackagePlus, Plus, Pencil, Trash2 } from 'lucide-react'
 import { api } from '../services/api'
 import { fadeUp, Modal, Spinner } from '../lib/ui'
 
@@ -30,11 +30,40 @@ export default function Estoque() {
     carregar()
   }, [])
 
+  const selecionado = insumos.find((i) => String(i.id) === String(insumoId))
+  const quantidade = Number(qtd)
+  const sobra =
+    selecionado && quantidade > 0
+      ? tipo === 'ENTRADA'
+        ? Number(selecionado.qtd_atual) + quantidade
+        : tipo === 'SAIDA'
+          ? Number(selecionado.qtd_atual) - quantidade
+          : quantidade
+      : null
+  const passouDoEstoque = tipo === 'SAIDA' && sobra !== null && sobra < 0
+
   const movimentar = async (e) => {
     e.preventDefault()
+    if (passouDoEstoque) {
+      setErro(
+        `Não dá pra tirar ${quantidade} ${selecionado.unidade} de ${selecionado.nome}: só tem ${selecionado.qtd_atual} ${selecionado.unidade} em estoque.`,
+      )
+      return
+    }
     try {
-      await api.movimentarEstoque({ insumo_id: Number(insumoId), tipo, qtd: Number(qtd) })
+      await api.movimentarEstoque({ insumo_id: Number(insumoId), tipo, qtd: quantidade })
       setQtd('')
+      await carregar()
+    } catch (err) {
+      setErro(err.message)
+    }
+  }
+
+  const excluir = async (i) => {
+    if (!window.confirm(`Tirar "${i.nome}" do estoque de vez? O histórico de movimentos dele também sai.`)) return
+    setErro('')
+    try {
+      await api.removerInsumo(i.id)
       await carregar()
     } catch (err) {
       setErro(err.message)
@@ -118,12 +147,34 @@ export default function Estoque() {
                 </select>
               </label>
               <label className="field">
-                Quantidade
-                <input type="number" step="0.001" placeholder="0" value={qtd} onChange={(e) => setQtd(e.target.value)} required />
+                Quantidade {selecionado ? `(${selecionado.unidade})` : ''}
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  max={tipo === 'SAIDA' && selecionado ? selecionado.qtd_atual : undefined}
+                  placeholder="0"
+                  value={qtd}
+                  onChange={(e) => setQtd(e.target.value)}
+                  required
+                />
               </label>
             </div>
+
+            {selecionado && (
+              <p className={`mov-hint ${passouDoEstoque ? 'bad' : ''}`}>
+                {passouDoEstoque ? (
+                  <>Só tem <b>{selecionado.qtd_atual} {selecionado.unidade}</b> de {selecionado.nome}. O estoque não pode ficar negativo.</>
+                ) : sobra !== null ? (
+                  <>Hoje: <b>{selecionado.qtd_atual} {selecionado.unidade}</b> · depois do movimento: <b>{Number(sobra.toFixed(3))} {selecionado.unidade}</b></>
+                ) : (
+                  <>Em estoque agora: <b>{selecionado.qtd_atual} {selecionado.unidade}</b></>
+                )}
+              </p>
+            )}
+
             {erro && <p className="form-msg-erro">{erro}</p>}
-            <button className="btn btn-primary btn-block">Registrar movimento</button>
+            <button className="btn btn-primary btn-block" disabled={passouDoEstoque}>Registrar movimento</button>
           </form>
         </motion.section>
 
@@ -158,7 +209,10 @@ export default function Estoque() {
                       </span>
                     </td>
                     <td className="num">
-                      <button className="btn btn-sm btn-ghost" onClick={() => abrirEdicao(i)}><Pencil size={14} /> Editar</button>
+                      <div className="row" style={{ justifyContent: 'flex-end', gap: 6 }}>
+                        <button className="btn btn-sm btn-ghost" onClick={() => abrirEdicao(i)}><Pencil size={14} /> Editar</button>
+                        <button className="btn btn-sm btn-ghost danger" title="Excluir insumo" onClick={() => excluir(i)}><Trash2 size={14} /></button>
+                      </div>
                     </td>
                   </tr>
                 ))}

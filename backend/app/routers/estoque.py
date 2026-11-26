@@ -50,6 +50,11 @@ def atualizar_insumo(
 
     atual = float(insumo.qtd_atual)
     novo = float(dados.qtd_atual)
+    if novo < 0:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "A quantidade em estoque nao pode ficar negativa",
+        )
 
     insumo.nome = dados.nome
     insumo.unidade = dados.unidade
@@ -105,12 +110,27 @@ def registrar_movimento(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Insumo nao encontrado")
 
     atual = float(insumo.qtd_atual)
+    if dados.tipo in ("ENTRADA", "SAIDA") and dados.qtd <= 0:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Informe uma quantidade maior que zero",
+        )
+
     if dados.tipo == "ENTRADA":
-        insumo.qtd_atual = atual + dados.qtd
+        novo_total = atual + dados.qtd
     elif dados.tipo == "SAIDA":
-        insumo.qtd_atual = atual - dados.qtd
+        novo_total = atual - dados.qtd
     else:
-        insumo.qtd_atual = dados.qtd
+        novo_total = dados.qtd
+
+    if novo_total < 0:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Nao da pra tirar {dados.qtd} {insumo.unidade} de {insumo.nome}: "
+            f"so tem {atual:g} {insumo.unidade} em estoque.",
+        )
+
+    insumo.qtd_atual = novo_total
 
     movimento = MovEstoque(
         insumo_id=insumo.id,

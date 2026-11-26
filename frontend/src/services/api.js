@@ -45,9 +45,7 @@ export const api = {
   usuarios: () => request('/auth/usuarios'),
   criarUsuario: (dados) => request('/auth/usuarios', { method: 'POST', body: dados }),
   alternarUsuario: (id) => request(`/auth/usuarios/${id}`, { method: 'PATCH' }),
-
-  config: () => request('/config'),
-  salvarConfig: (dados) => request('/config', { method: 'PUT', body: dados }),
+  removerUsuario: (id) => request(`/auth/usuarios/${id}`, { method: 'DELETE' }),
 
   produtos: () => request('/produtos'),
   produtosTodos: () => request('/produtos?apenas_ativos=false'),
@@ -56,6 +54,7 @@ export const api = {
   criarProduto: (dados) => request('/produtos', { method: 'POST', body: dados }),
   atualizarProduto: (id, dados) => request(`/produtos/${id}`, { method: 'PUT', body: dados }),
   removerProduto: (id) => request(`/produtos/${id}`, { method: 'DELETE' }),
+  previaAtivacao: (id) => request(`/produtos/${id}/previa-ativacao`),
 
   ficha: (produtoId) => request(`/estoque/ficha/${produtoId}`),
   salvarFicha: (produtoId, dados) => request(`/estoque/ficha/${produtoId}`, { method: 'POST', body: dados }),
@@ -77,8 +76,8 @@ export const api = {
   removerItem: (id, itemId) =>
     request(`/comandas/${id}/itens/${itemId}`, { method: 'DELETE' }),
   cancelarComanda: (id) => request(`/comandas/${id}/cancelar`, { method: 'POST' }),
-  fecharComanda: (id, pagamentos) =>
-    request(`/comandas/${id}/fechar`, { method: 'POST', body: { pagamentos } }),
+  fecharComanda: (id, pagamentos, servidor_publico = false) =>
+    request(`/comandas/${id}/fechar`, { method: 'POST', body: { pagamentos, servidor_publico } }),
 
   insumos: () => request('/estoque/insumos'),
   alertasEstoque: () => request('/estoque/alertas'),

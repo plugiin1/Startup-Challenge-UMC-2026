@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -8,6 +8,8 @@ from app.models.produto import Produto
 
 STATUS_COMANDA = ("ABERTA", "FECHADA", "CANCELADA")
 STATUS_COZINHA = ("RECEBIDO", "PREPARANDO", "PRONTO", "ENTREGUE")
+
+DESCONTO_SERVIDOR_PUBLICO = 0.20
 
 class Comanda(Base):
     __tablename__ = "comandas"
@@ -20,6 +22,7 @@ class Comanda(Base):
     aberta_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     fechada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     usuario_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"))
+    servidor_publico: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
     itens: Mapped[list["ItemComanda"]] = relationship(
         back_populates="comanda", cascade="all, delete-orphan", order_by="ItemComanda.id"
@@ -27,8 +30,24 @@ class Comanda(Base):
     pagamentos: Mapped[list["Pagamento"]] = relationship(back_populates="comanda")
 
     @property
-    def total(self) -> float:
+    def total_bruto(self) -> float:
         return round(float(sum(item.subtotal for item in self.itens)), 2)
+
+    @property
+    def total_pratos(self) -> float:
+        return round(
+            float(sum(item.subtotal for item in self.itens if item.e_prato)), 2
+        )
+
+    @property
+    def desconto(self) -> float:
+        if not self.servidor_publico:
+            return 0.0
+        return round(self.total_pratos * DESCONTO_SERVIDOR_PUBLICO, 2)
+
+    @property
+    def total(self) -> float:
+        return round(self.total_bruto - self.desconto, 2)
 
 class ItemComanda(Base):
     __tablename__ = "itens_comanda"
@@ -55,6 +74,14 @@ class ItemComanda(Base):
     @property
     def subtotal(self) -> float:
         return round(float(self.preco_unit) * self.quantidade_cobrada, 2)
+
+    @property
+    def produto_tipo(self) -> str:
+        return self.produto.tipo if self.produto is not None else "UNIDADE"
+
+    @property
+    def e_prato(self) -> bool:
+        return self.produto_tipo == "KG"
 
     @property
     def produto_nome(self) -> str:

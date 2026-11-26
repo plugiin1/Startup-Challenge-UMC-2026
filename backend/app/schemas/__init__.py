@@ -26,6 +26,8 @@ from app.schemas.estoque import (
     InsumoIn,
     InsumoOut,
     MovEstoqueOut,
+    PreviaAtivacaoOut,
+    PreviaInsumoOut,
 )
 from app.schemas.produto import CategoriaIn, CategoriaOut, ProdutoIn, ProdutoOut
 
@@ -57,6 +59,8 @@ __all__ = [
     "PagamentoIn",
     "PagamentoOut",
     "PedidoCozinhaOut",
+    "PreviaAtivacaoOut",
+    "PreviaInsumoOut",
     "ProdutoIn",
     "ProdutoOut",
     "RelatorioCaixaOut",

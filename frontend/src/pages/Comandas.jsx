@@ -132,8 +132,19 @@ function ItemModal({ produto, marmitexPreco, onClose, onConfirm, enviando }) {
 }
 
 function PaymentModal({ open, comanda, onClose, onConfirm, fechando }) {
-  const totalDevido = r2(comanda?.total || 0)
+  const [servidor, setServidor] = useState(false)
   const [linhas, setLinhas] = useState([{ forma: 'PIX', valor: '' }])
+
+  const totalBruto = r2(comanda?.total_bruto ?? comanda?.total ?? 0)
+  const totalPratos = r2(
+    (comanda?.itens || []).reduce((s, i) => s + (i.produto_tipo === 'KG' ? Number(i.subtotal) : 0), 0),
+  )
+  const desconto = servidor ? r2(totalPratos * 0.2) : 0
+  const totalDevido = r2(totalBruto - desconto)
+
+  useEffect(() => {
+    if (open) setServidor(false)
+  }, [open])
 
   useEffect(() => {
     if (open) setLinhas([{ forma: 'PIX', valor: totalDevido.toFixed(2) }])
@@ -151,7 +162,7 @@ function PaymentModal({ open, comanda, onClose, onConfirm, fechando }) {
     const pagamentos = linhas
       .map((l) => ({ forma: l.forma, valor: r2(l.valor) }))
       .filter((p) => p.valor > 0)
-    onConfirm(pagamentos)
+    onConfirm(pagamentos, servidor)
   }
 
   return (
@@ -162,8 +173,22 @@ function PaymentModal({ open, comanda, onClose, onConfirm, fechando }) {
       subtitle={comanda ? comanda.cliente : ''}
     >
       <div className="pay-sum">
+        {desconto > 0 && (
+          <>
+            <div className="row spread pay-linha"><span>Pratos e bebidas</span><span className="mono">{brl(totalBruto)}</span></div>
+            <div className="row spread pay-linha desconto"><span>Servidor público (20% no prato)</span><span className="mono">-{brl(desconto)}</span></div>
+          </>
+        )}
         <div className="row spread pay-total"><span>Total a pagar</span><b className="mono">{brl(totalDevido)}</b></div>
       </div>
+
+      <label className={`servidor-check ${servidor ? 'on' : ''}`}>
+        <input type="checkbox" checked={servidor} onChange={(e) => setServidor(e.target.checked)} />
+        <span>
+          <b>Servidor público</b>
+          <small>{totalPratos > 0 ? `20% de desconto no prato (${brl(totalPratos)}). Bebidas seguem no valor cheio.` : 'Não há prato por quilo nesta comanda.'}</small>
+        </span>
+      </label>
 
       <div className="field" style={{ margin: '4px 0 8px' }}>Pagamento</div>
       <div className="stack" style={{ gap: 8 }}>
@@ -335,11 +360,11 @@ export default function Comandas() {
     }
   }
 
-  const confirmarPagamento = async (pagamentos) => {
+  const confirmarPagamento = async (pagamentos, servidorPublico) => {
     setFechando(true)
     setErro('')
     try {
-      await api.fecharComanda(ativa.id, pagamentos)
+      await api.fecharComanda(ativa.id, pagamentos, servidorPublico)
       setPagando(false)
       setAtiva(null)
       await carregar()

@@ -174,6 +174,7 @@ def fechar_comanda(
             "Nenhum caixa aberto. Abra o caixa antes de receber pagamentos",
         )
 
+    comanda.servidor_publico = dados.servidor_publico
     total_devido = round(comanda.total, 2)
 
     total_pago = round(sum(p.valor for p in dados.pagamentos), 2)

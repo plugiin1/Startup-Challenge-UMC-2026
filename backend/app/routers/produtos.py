@@ -4,8 +4,25 @@ from sqlalchemy.orm import Session
 from app.core.deps import exigir_perfil, usuario_atual
 from app.database import get_db
 from app.models import Categoria, ItemComanda, Produto, Usuario
-from app.schemas import CategoriaIn, CategoriaOut, ProdutoIn, ProdutoOut
+from app.schemas import (
+    CategoriaIn,
+    CategoriaOut,
+    PreviaAtivacaoOut,
+    ProdutoIn,
+    ProdutoOut,
+)
 from app.services import estoque_service
+from app.services.estoque_service import EstoqueInsuficiente
+
+def _erro_de_estoque(produto, erro: EstoqueInsuficiente) -> HTTPException:
+    partes = [
+        f"{f['nome']} (precisa de {f['qtd_necessaria']:g} {f['unidade']}, tem {f['qtd_atual']:g})"
+        for f in erro.faltantes
+    ]
+    return HTTPException(
+        status.HTTP_409_CONFLICT,
+        f"Nao da pra ativar {produto.nome}: falta estoque de " + "; ".join(partes),
+    )
 
 router = APIRouter(prefix="/produtos", tags=["cardapio"])
 
@@ -49,7 +66,11 @@ def criar_produto(
     db.add(produto)
     db.flush()
     if produto.ativo and produto.baixa_ao_ativar:
-        estoque_service.enviar_ao_buffet(db, produto, usuario.id)
+        try:
+            estoque_service.enviar_ao_buffet(db, produto, usuario.id)
+        except EstoqueInsuficiente as erro:
+            db.rollback()
+            raise _erro_de_estoque(produto, erro) from erro
     db.commit()
     db.refresh(produto)
     return produto
@@ -66,10 +87,18 @@ def atualizar_produto(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Produto nao encontrado")
 
     estava_ativo = produto.ativo
+    vai_ao_buffet = dados.baixa_ao_ativar and dados.ativo and not estava_ativo
+
+    if vai_ao_buffet:
+        previa = estoque_service.previa_do_buffet(db, produto)
+        faltantes = [i for i in previa if not i["suficiente"]]
+        if faltantes:
+            raise _erro_de_estoque(produto, EstoqueInsuficiente(faltantes))
+
     for campo, valor in dados.model_dump().items():
         setattr(produto, campo, valor)
 
-    if produto.baixa_ao_ativar and produto.ativo and not estava_ativo:
+    if vai_ao_buffet:
         estoque_service.enviar_ao_buffet(db, produto, usuario.id)
 
     db.commit()
@@ -98,3 +127,22 @@ def excluir_produto(
 
     db.delete(produto)
     db.commit()
+
+@router.get("/{produto_id}/previa-ativacao", response_model=PreviaAtivacaoOut)
+def previa_de_ativacao(
+    produto_id: int,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(exigir_perfil("GERENTE", "CAIXA")),
+) -> PreviaAtivacaoOut:
+    produto = db.get(Produto, produto_id)
+    if produto is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Produto nao encontrado")
+
+    itens = estoque_service.previa_do_buffet(db, produto)
+    return PreviaAtivacaoOut(
+        produto_id=produto.id,
+        produto_nome=produto.nome,
+        buffet=bool(produto.baixa_ao_ativar),
+        pode_ativar=all(i["suficiente"] for i in itens),
+        itens=itens,
+    )

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import exigir_perfil
 from app.database import get_db
-from app.models import Caixa, Usuario
+from app.models import Caixa, Produto, Usuario
 from app.schemas import AbrirCaixaIn, CaixaOut, FecharCaixaIn, RelatorioCaixaOut
 from app.services import caixa_service
 
@@ -32,6 +32,9 @@ def abrir_caixa(
 
     caixa = Caixa(valor_inicial=dados.valor_inicial, usuario_id=usuario.id)
     db.add(caixa)
+    db.query(Produto).filter(
+        Produto.ativo.is_(True), Produto.baixa_ao_ativar.is_(True)
+    ).update({Produto.ativo: False}, synchronize_session=False)
     db.commit()
     db.refresh(caixa)
     return caixa

@@ -1,15 +1,28 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, Pencil, Power, Trash2 } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { AlertTriangle, Plus, Pencil, Power, Search, Trash2, UtensilsCrossed } from 'lucide-react'
 import { api } from '../services/api'
 import { brl, Modal, Spinner } from '../lib/ui'
 
 const NOVO = { nome: '', preco: '', tipo: 'UNIDADE', categoria_id: '', ativo: true, baixa_ao_ativar: false, buffetItens: [] }
 
+const FILTROS = [
+  { id: 'TODOS', nome: 'Tudo' },
+  { id: 'BUFFET', nome: 'Buffet' },
+  { id: 'VENDA', nome: 'Para venda' },
+  { id: 'ATIVOS', nome: 'No ar agora' },
+]
+
+const num = (v) => Number(Number(v).toFixed(3))
+
 export default function Cardapio() {
   const [produtos, setProdutos] = useState([])
   const [categorias, setCategorias] = useState([])
   const [insumos, setInsumos] = useState([])
+  const [fichas, setFichas] = useState({})
   const [erro, setErro] = useState('')
+  const [busca, setBusca] = useState('')
+  const [filtro, setFiltro] = useState('TODOS')
 
   const [editando, setEditando] = useState(null)
   const [form, setForm] = useState(NOVO)
@@ -22,11 +35,21 @@ export default function Cardapio() {
   const [bInsumo, setBInsumo] = useState('')
   const [bQtd, setBQtd] = useState('')
 
+  const [confirmando, setConfirmando] = useState(null)
+  const [aplicando, setAplicando] = useState(false)
+
   const carregar = async () => {
     try {
-      const [p, c] = await Promise.all([api.produtosTodos(), api.categorias()])
+      const [p, c, i] = await Promise.all([api.produtosTodos(), api.categorias(), api.insumos()])
       setProdutos(p)
       setCategorias(c)
+      setInsumos(i)
+
+      const buffet = p.filter((x) => x.baixa_ao_ativar)
+      const linhas = await Promise.all(
+        buffet.map((x) => api.ficha(x.id).then((l) => [x.id, l]).catch(() => [x.id, []])),
+      )
+      setFichas(Object.fromEntries(linhas))
     } catch (e) {
       setErro(e.message)
     }
@@ -34,12 +57,34 @@ export default function Cardapio() {
 
   useEffect(() => {
     carregar()
-    api.insumos().then(setInsumos).catch(() => {})
   }, [])
 
   const insumoNome = useMemo(() => Object.fromEntries(insumos.map((i) => [i.id, i])), [insumos])
   const catBuffet = useMemo(() => categorias.find((c) => c.nome === 'Buffet'), [categorias])
   const insumosBuffet = useMemo(() => insumos.filter((i) => i.ingrediente), [insumos])
+
+  const faltaEstoque = (p) => {
+    const linhas = fichas[p.id] || []
+    return linhas.filter((l) => {
+      const i = insumoNome[l.insumo_id]
+      return i && Number(i.qtd_atual) < Number(l.qtd_usada)
+    })
+  }
+
+  const visiveis = useMemo(() => {
+    const termo = busca.trim().toLowerCase()
+    return produtos.filter((p) => {
+      if (termo && !p.nome.toLowerCase().includes(termo)) return false
+      if (filtro === 'BUFFET') return p.baixa_ao_ativar
+      if (filtro === 'VENDA') return !p.baixa_ao_ativar
+      if (filtro === 'ATIVOS') return p.ativo
+      return true
+    })
+  }, [produtos, busca, filtro])
+
+  const doBuffet = visiveis.filter((p) => p.baixa_ao_ativar)
+  const paraVenda = visiveis.filter((p) => !p.baixa_ao_ativar)
+  const ativos = produtos.filter((p) => p.ativo).length
 
   const limparBuffetAdd = () => {
     setBInsumo('')
@@ -142,25 +187,58 @@ export default function Cardapio() {
     }
   }
 
-  const alternarAtivo = async (p) => {
+  const trocarAtivo = async (p, ativo) => {
+    await api.atualizarProduto(p.id, {
+      nome: p.nome,
+      preco: Number(p.preco),
+      tipo: p.tipo,
+      categoria_id: p.categoria_id,
+      ativo,
+      baixa_ao_ativar: p.baixa_ao_ativar,
+    })
+    await carregar()
+  }
+
+  const clicarPower = async (p) => {
     setErro('')
+    if (!p.baixa_ao_ativar) {
+      try {
+        await trocarAtivo(p, !p.ativo)
+      } catch (e) {
+        setErro(e.message)
+      }
+      return
+    }
+
+    if (p.ativo) {
+      setConfirmando({ produto: p, acao: 'DESATIVAR' })
+      return
+    }
+
     try {
-      await api.atualizarProduto(p.id, {
-        nome: p.nome,
-        preco: Number(p.preco),
-        tipo: p.tipo,
-        categoria_id: p.categoria_id,
-        ativo: !p.ativo,
-        baixa_ao_ativar: p.baixa_ao_ativar,
-      })
-      await carregar()
+      const previa = await api.previaAtivacao(p.id)
+      setConfirmando({ produto: p, acao: 'ATIVAR', previa })
     } catch (e) {
       setErro(e.message)
     }
   }
 
+  const confirmar = async () => {
+    setAplicando(true)
+    setErro('')
+    try {
+      await trocarAtivo(confirmando.produto, confirmando.acao === 'ATIVAR')
+      setConfirmando(null)
+    } catch (e) {
+      setErro(e.message)
+      setConfirmando(null)
+    } finally {
+      setAplicando(false)
+    }
+  }
+
   const excluir = async (p) => {
-    if (!window.confirm(`Excluir "${p.nome}" do cardapio? Essa acao nao pode ser desfeita.`)) return
+    if (!window.confirm(`Excluir "${p.nome}" do cardápio? Essa ação não pode ser desfeita.`)) return
     setErro('')
     try {
       await api.removerProduto(p.id)
@@ -182,60 +260,180 @@ export default function Cardapio() {
     }
   }
 
+  const Card = ({ p }) => {
+    const faltando = p.baixa_ao_ativar ? faltaEstoque(p) : []
+    const bloqueado = !p.ativo && faltando.length > 0
+    const linhas = fichas[p.id] || []
+
+    return (
+      <motion.article
+        layout
+        className={`prod-card ${p.ativo ? 'on' : ''} ${bloqueado ? 'blocked' : ''}`}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+      >
+        <div className="prod-top">
+          <div>
+            <h4>{p.nome}</h4>
+            <div className="prod-meta">
+              <span className="chip neutral"><span className="chip-dot" />{p.baixa_ao_ativar ? 'buffet' : p.tipo === 'KG' ? 'por kg' : 'unidade'}</span>
+              {!p.baixa_ao_ativar && <span className="prod-preco mono">{brl(p.preco)}{p.tipo === 'KG' ? '/kg' : ''}</span>}
+              <span className="muted prod-cat">{p.categoria?.nome || 'sem categoria'}</span>
+            </div>
+          </div>
+          <span className={`chip ${p.ativo ? 'ok' : 'neutral'}`}><span className="chip-dot" />{p.ativo ? 'no ar' : 'fora'}</span>
+        </div>
+
+        {p.baixa_ao_ativar && linhas.length > 0 && (
+          <ul className="prod-ficha">
+            {linhas.map((l) => {
+              const i = insumoNome[l.insumo_id]
+              const falta = i && Number(i.qtd_atual) < Number(l.qtd_usada)
+              return (
+                <li key={l.insumo_id} className={falta ? 'falta' : ''}>
+                  <span>{i?.nome || `Item ${l.insumo_id}`}</span>
+                  <span className="mono">{num(l.qtd_usada)} {i?.unidade || ''}</span>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+
+        {bloqueado && (
+          <p className="prod-aviso">
+            <AlertTriangle size={14} />
+            Falta {faltando.map((l) => insumoNome[l.insumo_id]?.nome).join(', ')} no estoque.
+          </p>
+        )}
+
+        <div className="prod-acoes">
+          <button
+            className={`btn btn-sm ${p.ativo ? 'btn-danger' : 'btn-primary'}`}
+            onClick={() => clicarPower(p)}
+            disabled={bloqueado}
+          >
+            <Power size={14} /> {p.ativo ? 'Tirar do cardápio' : 'Ativar'}
+          </button>
+          <button className="btn btn-sm btn-ghost" onClick={() => abrirEdicao(p)}><Pencil size={14} /> Editar</button>
+          <button className="btn btn-sm btn-ghost danger" title="Excluir" onClick={() => excluir(p)}><Trash2 size={14} /></button>
+        </div>
+      </motion.article>
+    )
+  }
+
   return (
     <div>
       <div className="page-head">
         <div className="eyebrow">Gerência</div>
         <h1>Cardápio</h1>
-        <p>Cadastre e edite os pratos, bebidas e porções, com preço, categoria e ficha técnica.</p>
+        <p>Ative o que está no buffet hoje e mantenha as bebidas e porções em dia. Ao ativar um item do buffet, o estoque baixa na hora.</p>
       </div>
 
       {erro && <p className="form-msg-erro" style={{ marginBottom: 16 }}>{erro}</p>}
 
-      <div className="row spread" style={{ marginBottom: 16 }}>
-        <span className="muted">{produtos.length} produtos</span>
+      <div className="cardapio-bar">
+        <div className="busca">
+          <Search size={16} />
+          <input placeholder="Buscar no cardápio..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="filtros">
+          {FILTROS.map((f) => (
+            <button key={f.id} className={`filtro ${filtro === f.id ? 'on' : ''}`} onClick={() => setFiltro(f.id)}>
+              {f.nome}
+            </button>
+          ))}
+        </div>
         <button className="btn btn-primary" onClick={abrirNovo}><Plus size={16} /> Novo produto</button>
       </div>
 
-      <section className="glass glass-pad">
-        <div style={{ overflowX: 'auto' }}>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Categoria</th>
-                <th className="num">Preço</th>
-                <th>Tipo</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {produtos.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.nome}</td>
-                  <td className="muted">{p.categoria?.nome || '-'}</td>
-                  <td className="num mono">{p.baixa_ao_ativar ? '-' : `${brl(p.preco)}${p.tipo === 'KG' ? '/kg' : ''}`}</td>
-                  <td><span className="chip neutral"><span className="chip-dot" />{p.baixa_ao_ativar ? 'buffet' : p.tipo === 'KG' ? 'por kg' : 'unidade'}</span></td>
-                  <td>
-                    {p.ativo ? <span className="chip ok"><span className="chip-dot" />ativo</span> : <span className="chip danger"><span className="chip-dot" />inativo</span>}
-                  </td>
-                  <td className="num">
-                    <div className="row" style={{ justifyContent: 'flex-end', gap: 6 }}>
-                      <button className="btn btn-sm btn-ghost" onClick={() => abrirEdicao(p)}><Pencil size={14} /> Editar</button>
-                      <button className="btn btn-sm btn-ghost" title={p.ativo ? 'Desativar' : 'Ativar'} onClick={() => alternarAtivo(p)}><Power size={14} /></button>
-                      <button className="btn btn-sm btn-ghost" title="Excluir" onClick={() => excluir(p)}><Trash2 size={14} /></button>
-                    </div>
-                  </td>
-                </tr>
+      <p className="muted" style={{ fontSize: 13, marginBottom: 18 }}>
+        {produtos.length} itens cadastrados · <b style={{ color: 'var(--green)' }}>{ativos} no ar agora</b>
+      </p>
+
+      {doBuffet.length > 0 && (
+        <section className="cardapio-sec">
+          <div className="sec-head">
+            <UtensilsCrossed size={16} />
+            <h3>Buffet</h3>
+            <span className="muted">baixa o estoque ao ativar</span>
+          </div>
+          <div className="prod-grid">
+            {doBuffet.map((p) => <Card key={p.id} p={p} />)}
+          </div>
+        </section>
+      )}
+
+      {paraVenda.length > 0 && (
+        <section className="cardapio-sec">
+          <div className="sec-head">
+            <h3>Para venda</h3>
+            <span className="muted">bebidas e porções lançadas na comanda</span>
+          </div>
+          <div className="prod-grid">
+            {paraVenda.map((p) => <Card key={p.id} p={p} />)}
+          </div>
+        </section>
+      )}
+
+      {visiveis.length === 0 && (
+        <section className="glass glass-pad">
+          <p className="muted" style={{ textAlign: 'center', padding: 20 }}>Nada encontrado com esse filtro.</p>
+        </section>
+      )}
+
+      <Modal
+        open={!!confirmando}
+        onClose={() => !aplicando && setConfirmando(null)}
+        title={confirmando?.acao === 'ATIVAR' ? 'Mandar pro buffet' : 'Tirar do buffet'}
+        subtitle={confirmando?.produto?.nome}
+      >
+        {confirmando?.acao === 'ATIVAR' ? (
+          <div className="stack">
+            <p className="muted" style={{ fontSize: 13.5 }}>Ao ativar, isso sai do estoque agora:</p>
+            <div className="previa-list">
+              {confirmando.previa?.itens.map((i) => (
+                <div className={`previa-row ${i.suficiente ? '' : 'falta'}`} key={i.insumo_id}>
+                  <span>{i.nome}</span>
+                  <span className="row" style={{ gap: 10 }}>
+                    <b className="mono">-{num(i.qtd_necessaria)} {i.unidade}</b>
+                    <span className="muted mono" style={{ fontSize: 12 }}>
+                      {num(i.qtd_atual)} → {num(Math.max(i.qtd_atual - i.qtd_necessaria, 0))} {i.unidade}
+                    </span>
+                  </span>
+                </div>
               ))}
-              {produtos.length === 0 && (
-                <tr><td colSpan={6} className="muted" style={{ textAlign: 'center', padding: 24 }}>Nenhum produto cadastrado.</td></tr>
+              {!confirmando.previa?.itens.length && (
+                <p className="muted" style={{ fontSize: 13 }}>Este item não tem ingredientes ligados, nada sai do estoque.</p>
               )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            </div>
+
+            {confirmando.previa && !confirmando.previa.pode_ativar && (
+              <p className="prod-aviso">
+                <AlertTriangle size={14} />
+                Não dá pra ativar: falta estoque dos itens em vermelho. Dê entrada no estoque antes.
+              </p>
+            )}
+
+            <button
+              className="btn btn-primary btn-block btn-lg"
+              onClick={confirmar}
+              disabled={aplicando || (confirmando.previa && !confirmando.previa.pode_ativar)}
+            >
+              {aplicando ? <Spinner /> : 'Confirmar e baixar do estoque'}
+            </button>
+          </div>
+        ) : (
+          <div className="stack">
+            <p style={{ fontSize: 14 }}>
+              O que já foi pro buffet <b>não volta pro estoque</b>. Isso só tira o item do cardápio de hoje.
+            </p>
+            <button className="btn btn-danger btn-block btn-lg" onClick={confirmar} disabled={aplicando}>
+              {aplicando ? <Spinner /> : 'Tirar do cardápio'}
+            </button>
+          </div>
+        )}
+      </Modal>
 
       <Modal
         open={!!editando}
