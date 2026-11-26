@@ -22,16 +22,7 @@ const FORMAS = [
   { id: 'CREDITO', nome: 'Crédito', icon: Landmark },
   { id: 'PIX', nome: 'Pix', icon: QrCode },
 ]
-const TAGS_RAPIDAS = [
-  'Sem cebola',
-  'Sem gelo',
-  'Com gelo',
-  'Com limão',
-  'Bem passado',
-  'Sem pimenta',
-  'Sem açúcar',
-  'Para viagem',
-]
+const TAGS_RAPIDAS = ['Com gelo', 'Com limão', 'Com laranja']
 
 const r2 = (v) => Math.round((Number(v) || 0) * 100) / 100
 
