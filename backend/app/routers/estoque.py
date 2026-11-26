@@ -16,7 +16,7 @@ from app.services import estoque_service
 
 router = APIRouter(prefix="/estoque", tags=["estoque"])
 
-ACESSO = ("ADMIN", "CAIXA")
+ACESSO = ("GERENTE", "CAIXA")
 
 @router.get("/insumos", response_model=list[InsumoOut])
 def listar_insumos(
@@ -29,7 +29,7 @@ def listar_insumos(
 def criar_insumo(
     dados: InsumoIn,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(exigir_perfil("ADMIN")),
+    _: Usuario = Depends(exigir_perfil("GERENTE")),
 ) -> Insumo:
     insumo = Insumo(**dados.model_dump())
     db.add(insumo)
@@ -99,7 +99,7 @@ def adicionar_a_ficha(
     produto_id: int,
     dados: FichaTecnicaIn,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(exigir_perfil("ADMIN")),
+    _: Usuario = Depends(exigir_perfil("GERENTE")),
 ) -> FichaTecnica:
     if db.get(Produto, produto_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Produto nao encontrado")

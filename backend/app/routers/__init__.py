@@ -1,3 +1,3 @@
-from app.routers import auth, caixa, comandas, cozinha, estoque, produtos
+from app.routers import auth, caixa, comandas, config, estoque, produtos, relatorios
 
-__all__ = ["auth", "caixa", "comandas", "cozinha", "estoque", "produtos"]
+__all__ = ["auth", "caixa", "comandas", "config", "estoque", "produtos", "relatorios"]

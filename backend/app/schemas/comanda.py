@@ -43,12 +43,15 @@ class ComandaResumoOut(BaseModel):
     aberta_em: datetime
     fechada_em: datetime | None
     total: float
+    taxa_servico: float = 0
+    total_com_taxa: float = 0
 
 class ComandaOut(ComandaResumoOut):
     itens: list[ItemComandaOut] = []
 
 class FecharComandaIn(BaseModel):
     pagamentos: list[PagamentoIn] = Field(min_length=1)
+    aplicar_taxa: bool = True
 
 class StatusCozinhaIn(BaseModel):
     status_cozinha: StatusCozinha

@@ -36,7 +36,28 @@ export const api = {
   },
   me: () => request('/auth/me'),
 
+  usuarios: () => request('/auth/usuarios'),
+  criarUsuario: (dados) => request('/auth/usuarios', { method: 'POST', body: dados }),
+  alternarUsuario: (id) => request(`/auth/usuarios/${id}`, { method: 'PATCH' }),
+
+  config: () => request('/config'),
+  salvarConfig: (dados) => request('/config', { method: 'PUT', body: dados }),
+
   produtos: () => request('/produtos'),
+  produtosTodos: () => request('/produtos?apenas_ativos=false'),
+  categorias: () => request('/produtos/categorias'),
+  criarCategoria: (nome) => request('/produtos/categorias', { method: 'POST', body: { nome } }),
+  criarProduto: (dados) => request('/produtos', { method: 'POST', body: dados }),
+  atualizarProduto: (id, dados) => request(`/produtos/${id}`, { method: 'PUT', body: dados }),
+  removerProduto: (id) => request(`/produtos/${id}`, { method: 'DELETE' }),
+
+  ficha: (produtoId) => request(`/estoque/ficha/${produtoId}`),
+  salvarFicha: (produtoId, dados) => request(`/estoque/ficha/${produtoId}`, { method: 'POST', body: dados }),
+  criarInsumo: (dados) => request('/estoque/insumos', { method: 'POST', body: dados }),
+
+  relatorioVendas: (inicio, fim) => request(`/relatorios/vendas?inicio=${inicio}&fim=${fim}`),
+  relatorioProdutos: (inicio, fim, limite = 10) =>
+    request(`/relatorios/produtos?inicio=${inicio}&fim=${fim}&limite=${limite}`),
 
   comandas: (status = 'ABERTA') => request(`/comandas?status_filtro=${status}`),
   comanda: (id) => request(`/comandas/${id}`),
@@ -47,15 +68,8 @@ export const api = {
   removerItem: (id, itemId) =>
     request(`/comandas/${id}/itens/${itemId}`, { method: 'DELETE' }),
   cancelarComanda: (id) => request(`/comandas/${id}/cancelar`, { method: 'POST' }),
-  fecharComanda: (id, pagamentos) =>
-    request(`/comandas/${id}/fechar`, { method: 'POST', body: { pagamentos } }),
-
-  pedidosCozinha: () => request('/cozinha/pedidos'),
-  mudarStatusItem: (itemId, status) =>
-    request(`/cozinha/itens/${itemId}`, {
-      method: 'PATCH',
-      body: { status_cozinha: status },
-    }),
+  fecharComanda: (id, pagamentos, aplicar_taxa = true) =>
+    request(`/comandas/${id}/fechar`, { method: 'POST', body: { pagamentos, aplicar_taxa } }),
 
   insumos: () => request('/estoque/insumos'),
   alertasEstoque: () => request('/estoque/alertas'),

@@ -1,4 +1,6 @@
-from app.schemas.auth import LoginIn, TokenOut, UsuarioIn, UsuarioOut
+from app.schemas.auth import LoginIn, PerfilNovo, TokenOut, UsuarioIn, UsuarioOut
+from app.schemas.config import ConfigIn, ConfigOut
+from app.schemas.relatorios import ProdutoVendidoOut, RelatorioVendasOut, VendaDiaOut
 from app.schemas.caixa import (
     AbrirCaixaIn,
     CaixaOut,
@@ -33,6 +35,12 @@ __all__ = [
     "CaixaOut",
     "CategoriaIn",
     "CategoriaOut",
+    "ConfigIn",
+    "ConfigOut",
+    "PerfilNovo",
+    "ProdutoVendidoOut",
+    "RelatorioVendasOut",
+    "VendaDiaOut",
     "ComandaOut",
     "ComandaResumoOut",
     "EntradaEstoqueIn",

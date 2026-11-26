@@ -14,6 +14,7 @@ from app.schemas import (
     ItemComandaIn,
     ItemComandaOut,
 )
+from app.routers.config import obter_config
 from app.services import caixa_service, estoque_service
 
 router = APIRouter(prefix="/comandas", tags=["comandas"])
@@ -158,13 +159,18 @@ def fechar_comanda(
             "Nenhum caixa aberto. Abra o caixa antes de receber pagamentos",
         )
 
+    cfg = obter_config(db)
+    taxa = round(comanda.total * float(cfg.taxa_servico_percent) / 100, 2) if dados.aplicar_taxa else 0.0
+    total_devido = round(comanda.total + taxa, 2)
+
     total_pago = round(sum(p.valor for p in dados.pagamentos), 2)
-    if abs(total_pago - comanda.total) > 0.01:
+    if abs(total_pago - total_devido) > 0.01:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
-            f"Pagamentos somam {total_pago:.2f} e a comanda e {comanda.total:.2f}",
+            f"Pagamentos somam {total_pago:.2f} e o total com taxa e {total_devido:.2f}",
         )
 
+    comanda.taxa_servico = taxa
     for pagamento in dados.pagamentos:
         db.add(
             Pagamento(

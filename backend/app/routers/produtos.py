@@ -19,7 +19,7 @@ def listar_categorias(
 def criar_categoria(
     dados: CategoriaIn,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(exigir_perfil("ADMIN")),
+    _: Usuario = Depends(exigir_perfil("GERENTE")),
 ) -> Categoria:
     categoria = Categoria(nome=dados.nome)
     db.add(categoria)
@@ -42,7 +42,7 @@ def listar_produtos(
 def criar_produto(
     dados: ProdutoIn,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(exigir_perfil("ADMIN")),
+    _: Usuario = Depends(exigir_perfil("GERENTE")),
 ) -> Produto:
     produto = Produto(**dados.model_dump())
     db.add(produto)
@@ -55,7 +55,7 @@ def atualizar_produto(
     produto_id: int,
     dados: ProdutoIn,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(exigir_perfil("ADMIN")),
+    _: Usuario = Depends(exigir_perfil("GERENTE")),
 ) -> Produto:
     produto = db.get(Produto, produto_id)
     if produto is None:
@@ -71,7 +71,7 @@ def atualizar_produto(
 def desativar_produto(
     produto_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(exigir_perfil("ADMIN")),
+    _: Usuario = Depends(exigir_perfil("GERENTE")),
 ) -> None:
     produto = db.get(Produto, produto_id)
     if produto is None:

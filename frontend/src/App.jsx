@@ -3,26 +3,32 @@ import { motion } from 'framer-motion'
 import { LogOut } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Caixa from './pages/Caixa'
+import Cardapio from './pages/Cardapio'
 import Comandas from './pages/Comandas'
-import Cozinha from './pages/Cozinha'
+import Configuracoes from './pages/Configuracoes'
 import Dashboard from './pages/Dashboard'
 import Estoque from './pages/Estoque'
 import Login from './pages/Login'
+import Relatorios from './pages/Relatorios'
+import Usuarios from './pages/Usuarios'
 import { Spinner } from './lib/ui'
 
+const TODOS = ['GERENTE', 'CAIXA', 'GARCOM']
 const MENU = [
-  { path: '/dashboard', nome: 'Visão geral', perfis: ['ADMIN', 'CAIXA', 'GARCOM', 'COZINHA'] },
-  { path: '/comandas', nome: 'Comandas', perfis: ['ADMIN', 'CAIXA', 'GARCOM'] },
-  { path: '/cozinha', nome: 'Cozinha', perfis: ['ADMIN', 'CAIXA', 'GARCOM', 'COZINHA'] },
-  { path: '/estoque', nome: 'Estoque', perfis: ['ADMIN', 'CAIXA'] },
-  { path: '/caixa', nome: 'Caixa', perfis: ['ADMIN', 'CAIXA'] },
+  { path: '/dashboard', nome: 'Visão geral', perfis: TODOS },
+  { path: '/comandas', nome: 'Comandas', perfis: ['GERENTE', 'CAIXA', 'GARCOM'] },
+  { path: '/estoque', nome: 'Estoque', perfis: ['GERENTE', 'CAIXA'] },
+  { path: '/caixa', nome: 'Caixa', perfis: ['GERENTE', 'CAIXA'] },
+  { path: '/relatorios', nome: 'Relatórios', perfis: ['GERENTE', 'CAIXA'] },
+  { path: '/cardapio', nome: 'Cardápio', perfis: ['GERENTE'] },
+  { path: '/usuarios', nome: 'Usuários', perfis: ['GERENTE'] },
+  { path: '/config', nome: 'Config', perfis: ['GERENTE'] },
 ]
 
 const PERFIL_COR = {
-  ADMIN: '#ea1d2c',
+  GERENTE: '#ea1d2c',
   CAIXA: '#2f6fd0',
   GARCOM: '#138a5e',
-  COZINHA: '#f97316',
 }
 
 function TopNav() {
@@ -46,11 +52,7 @@ function TopNav() {
             return (
               <NavLink key={m.path} to={m.path} className={`nav-item ${ativo ? 'active' : ''}`}>
                 {ativo && (
-                  <motion.span
-                    layoutId="nav-active"
-                    className="active-bg"
-                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                  />
+                  <motion.span layoutId="nav-active" className="active-bg" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />
                 )}
                 <span className="lbl">{m.nome}</span>
               </NavLink>
@@ -87,7 +89,7 @@ function Rotas() {
     )
   if (!usuario) return <Login />
 
-  const inicial = usuario.perfil === 'COZINHA' ? '/cozinha' : '/dashboard'
+  const inicial = '/dashboard'
 
   return (
     <div className="shell">
@@ -96,9 +98,12 @@ function Rotas() {
         <Routes>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/comandas" element={<Comandas />} />
-          <Route path="/cozinha" element={<Cozinha />} />
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/caixa" element={<Caixa />} />
+          <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/cardapio" element={<Cardapio />} />
+          <Route path="/usuarios" element={<Usuarios />} />
+          <Route path="/config" element={<Configuracoes />} />
           <Route path="*" element={<Navigate to={inicial} replace />} />
         </Routes>
       </main>
