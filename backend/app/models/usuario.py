@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
 
-PERFIS = ("GERENTE", "CAIXA", "GARCOM")
+PERFIS = ("GERENTE", "CAIXA")
 
 class Usuario(Base):
     __tablename__ = "usuarios"

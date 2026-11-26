@@ -3,9 +3,8 @@ import { UserPlus, Power } from 'lucide-react'
 import { api } from '../services/api'
 import { Modal, Spinner } from '../lib/ui'
 
-const PERFIS = ['CAIXA', 'GARCOM']
-const COR = { GERENTE: '#6e1a15', CAIXA: '#1f5d7a', GARCOM: '#15705a' }
-const VAZIO = { nome: '', email: '', senha: '', perfil: 'GARCOM' }
+const COR = { GERENTE: '#6e1a15', CAIXA: '#1f5d7a' }
+const VAZIO = { nome: '', email: '', senha: '', perfil: 'CAIXA' }
 
 export default function Usuarios() {
   const [lista, setLista] = useState([])
@@ -48,7 +47,7 @@ export default function Usuarios() {
       <div className="page-head">
         <div className="eyebrow">Gerência</div>
         <h1>Usuários</h1>
-        <p>Cadastre a equipe (caixa e garçom). Só o gerente acessa esta tela.</p>
+        <p>Cadastre os caixas da equipe. Só o gerente acessa esta tela.</p>
       </div>
 
       {erro && <p className="form-msg-erro" style={{ marginBottom: 16 }}>{erro}</p>}
@@ -112,12 +111,6 @@ export default function Usuarios() {
           <label className="field">Nome<input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></label>
           <label className="field">E-mail<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
           <label className="field">Senha (mínimo 6)<input type="password" value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} /></label>
-          <label className="field">
-            Perfil
-            <select value={form.perfil} onChange={(e) => setForm({ ...form, perfil: e.target.value })}>
-              {PERFIS.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-          </label>
           <button className="btn btn-primary btn-block" onClick={criar} disabled={salvando || form.nome.length < 2 || form.senha.length < 6}>
             {salvando ? <Spinner /> : 'Criar usuário'}
           </button>

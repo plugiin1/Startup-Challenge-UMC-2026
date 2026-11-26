@@ -14,10 +14,10 @@ import Relatorios from './pages/Relatorios'
 import Usuarios from './pages/Usuarios'
 import { Spinner } from './lib/ui'
 
-const TODOS = ['GERENTE', 'CAIXA', 'GARCOM']
+const TODOS = ['GERENTE', 'CAIXA']
 const MENU = [
   { path: '/dashboard', nome: 'Visão geral', perfis: TODOS },
-  { path: '/comandas', nome: 'Comandas', perfis: ['GERENTE', 'CAIXA', 'GARCOM'] },
+  { path: '/comandas', nome: 'Comandas', perfis: ['GERENTE', 'CAIXA'] },
   { path: '/estoque', nome: 'Estoque', perfis: ['GERENTE', 'CAIXA'] },
   { path: '/caixa', nome: 'Caixa', perfis: ['GERENTE', 'CAIXA'] },
   { path: '/relatorios', nome: 'Relatórios', perfis: ['GERENTE', 'CAIXA'] },
@@ -29,7 +29,6 @@ const MENU = [
 const PERFIL_COR = {
   GERENTE: '#6e1a15',
   CAIXA: '#15705a',
-  GARCOM: '#a9711a',
 }
 
 function TopNav() {
