@@ -20,14 +20,15 @@ def caixa_atual(
 ) -> Caixa | None:
     return caixa_service.caixa_aberto(db)
 
-@router.post("/abrir", response_model=CaixaOut, status_code=status.HTTP_201_CREATED)
+@router.post("/abrir", response_model=CaixaOut)
 def abrir_caixa(
     dados: AbrirCaixaIn,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(exigir_perfil(*ACESSO)),
 ) -> Caixa:
-    if caixa_service.caixa_aberto(db) is not None:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Ja existe um caixa aberto")
+    aberto = caixa_service.caixa_aberto(db)
+    if aberto is not None:
+        return aberto
 
     caixa = Caixa(valor_inicial=dados.valor_inicial, usuario_id=usuario.id)
     db.add(caixa)

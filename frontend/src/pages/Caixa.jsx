@@ -1,29 +1,24 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, Unlock, Lock, Scale } from 'lucide-react'
+import { Wallet, Unlock, Lock, Banknote, CreditCard } from 'lucide-react'
 import { api } from '../services/api'
 import { brl, fadeUp, Spinner } from '../lib/ui'
 
-function LinhaResumo({ label, valor, destaque, forte }) {
-  return (
-    <div className="row spread" style={{ padding: '11px 2px', borderTop: '1px solid var(--stroke)' }}>
-      <span className={forte ? '' : 'muted'} style={forte ? { fontWeight: 600 } : undefined}>{label}</span>
-      <span
-        className="mono"
-        style={{
-          fontWeight: destaque ? 700 : 500,
-          color: destaque ? (Number(valor) === 0 ? 'var(--emerald)' : 'var(--amber)') : forte ? 'var(--ink)' : 'var(--ink-2)',
-        }}
-      >
-        {brl(valor)}
-      </span>
-    </div>
-  )
+const FORMA_LABEL = { DINHEIRO: 'Dinheiro', DEBITO: 'Débito', CREDITO: 'Crédito', PIX: 'Pix' }
+const FORMA_COR = { DINHEIRO: '#15705a', DEBITO: '#1f5d7a', CREDITO: '#6e1a15', PIX: '#a9711a' }
+
+function DiffChip({ valor }) {
+  if (valor === null || valor === undefined || Number.isNaN(valor)) return null
+  const v = Math.round(valor * 100) / 100
+  if (Math.abs(v) < 0.01) return <span className="chip ok"><span className="chip-dot" /> bateu certo</span>
+  if (v > 0) return <span className="chip" style={{ color: '#a9711a' }}><span className="chip-dot" /> sobrou {brl(v)}</span>
+  return <span className="chip danger"><span className="chip-dot" /> faltou {brl(-v)}</span>
 }
 
 export default function Caixa() {
   const [caixa, setCaixa] = useState(null)
   const [relatorio, setRelatorio] = useState(null)
+  const [fechado, setFechado] = useState(null)
   const [valorInicial, setValorInicial] = useState('0')
   const [contado, setContado] = useState('')
   const [maquininhas, setMaquininhas] = useState('')
@@ -50,6 +45,7 @@ export default function Caixa() {
     setCarregando(true)
     try {
       await api.abrirCaixa(Number(valorInicial))
+      setFechado(null)
       await carregar()
     } catch (err) {
       setErro(err.message)
@@ -66,8 +62,9 @@ export default function Caixa() {
         valor_contado: Number(contado),
         valor_maquininhas: Number(maquininhas || 0),
       })
-      setRelatorio(resultado)
+      setFechado(resultado)
       setCaixa(null)
+      setRelatorio(null)
       setContado('')
       setMaquininhas('')
       setErro('')
@@ -78,88 +75,148 @@ export default function Caixa() {
     }
   }
 
+  const esperadoGaveta = relatorio ? Number(relatorio.dinheiro_esperado) : Number(caixa?.valor_inicial || 0)
+  const esperadoCartao = relatorio ? Number(relatorio.cartao_pix_sistema) : 0
+  const difGaveta = contado === '' ? null : Number(contado) - esperadoGaveta
+  const difMaq = maquininhas === '' ? null : Number(maquininhas) - esperadoCartao
+
   return (
     <div>
       <div className="page-head">
         <div className="eyebrow">Financeiro</div>
         <h1>Caixa</h1>
-        <p>Feche o dia batendo a gaveta com as maquininhas, sem somar comanda na mão.</p>
+        <p>Abra o caixa com o troco, receba as comandas e feche conferindo a gaveta com as maquininhas.</p>
       </div>
 
-      <div className="grid grid-2">
-        <motion.section className="glass glass-pad" {...fadeUp}>
+      {erro && <p className="form-msg-erro" style={{ marginBottom: 16 }}>{erro}</p>}
+
+      {!caixa && (
+        <motion.section className="glass glass-pad" style={{ maxWidth: 460 }} {...fadeUp}>
           <div className="card-title">
             <span className="ico"><Wallet /></span>
-            <h3>{caixa ? 'Caixa aberto' : 'Abrir caixa'}</h3>
-            {caixa && <span className="chip ok" style={{ marginLeft: 'auto' }}><span className="chip-dot" /> aberto</span>}
+            <h3>Abrir o caixa</h3>
           </div>
+          {fechado && (
+            <div className="chip ok" style={{ marginBottom: 14 }}>
+              <span className="chip-dot" /> Caixa anterior fechado
+            </div>
+          )}
+          <form className="stack" onSubmit={abrir}>
+            <label className="field">
+              Troco que tem na gaveta agora
+              <input type="number" step="0.01" placeholder="0,00" value={valorInicial} onChange={(e) => setValorInicial(e.target.value)} />
+            </label>
+            <button className="btn btn-primary btn-lg btn-block" disabled={carregando}>
+              {carregando ? <Spinner /> : <><Unlock size={18} /> Abrir caixa</>}
+            </button>
+          </form>
+        </motion.section>
+      )}
 
-          {erro && <p className="form-msg-erro" style={{ marginBottom: 14 }}>{erro}</p>}
+      {fechado && !caixa && (
+        <motion.section className="glass glass-pad" style={{ marginTop: 18 }} {...fadeUp}>
+          <div className="card-title"><h3>Conferência do fechamento</h3></div>
+          <div className="grid kpis" style={{ marginBottom: 16 }}>
+            <div className="glass stat" style={{ '--sbar': '#15705a' }}>
+              <div className="label">Total vendido</div>
+              <div className="value">{brl(fechado.total_vendido)}</div>
+            </div>
+            <div className="glass stat" style={{ '--sbar': fechado.diferenca_dinheiro === 0 ? '#15705a' : '#b32218' }}>
+              <div className="label">Diferença na gaveta</div>
+              <div className="value">{brl(fechado.diferenca_dinheiro)}</div>
+            </div>
+            <div className="glass stat" style={{ '--sbar': fechado.diferenca_maquininhas === 0 ? '#15705a' : '#b32218' }}>
+              <div className="label">Diferença maquininhas</div>
+              <div className="value">{brl(fechado.diferenca_maquininhas)}</div>
+            </div>
+          </div>
+          <p className="muted" style={{ fontSize: 13.5 }}>
+            Dinheiro esperado {brl(fechado.dinheiro_esperado)}, contado {brl(fechado.dinheiro_contado)}. Cartão e Pix no sistema {brl(fechado.cartao_pix_sistema)}, nas maquininhas {brl(fechado.cartao_pix_maquininhas)}.
+          </p>
+        </motion.section>
+      )}
 
-          {!caixa ? (
-            <form className="stack" onSubmit={abrir}>
-              <label className="field">
-                Troco inicial na gaveta
-                <input type="number" step="0.01" placeholder="0,00" value={valorInicial} onChange={(e) => setValorInicial(e.target.value)} />
-              </label>
-              <button className="btn btn-primary btn-block" disabled={carregando}>
-                {carregando ? <Spinner /> : <><Unlock size={17} /> Abrir caixa</>}
-              </button>
-            </form>
-          ) : (
-            <>
-              <p className="muted" style={{ fontSize: 14, marginBottom: 16 }}>
-                Caixa #{caixa.id} aberto em {new Date(caixa.aberto_em).toLocaleString('pt-BR')} com {brl(caixa.valor_inicial)} de troco.
+      {caixa && (
+        <>
+          {relatorio && (
+            <div className="grid kpis" style={{ marginBottom: 18 }}>
+              <motion.div className="glass stat" style={{ '--sbar': '#15705a' }} {...fadeUp}>
+                <div className="label">Total vendido hoje</div>
+                <div className="value">{brl(relatorio.total_vendido)}</div>
+                <div className="sub">{relatorio.comandas_fechadas} comandas fechadas</div>
+              </motion.div>
+              <motion.div className="glass stat" style={{ '--sbar': '#1f5d7a' }} {...fadeUp}>
+                <div className="label">Esperado na gaveta</div>
+                <div className="value">{brl(esperadoGaveta)}</div>
+                <div className="sub">troco {brl(caixa.valor_inicial)} + dinheiro</div>
+              </motion.div>
+              <motion.div className="glass stat" style={{ '--sbar': '#a9711a' }} {...fadeUp}>
+                <div className="label">Cartão e Pix</div>
+                <div className="value">{brl(esperadoCartao)}</div>
+                <div className="sub">confira com as maquininhas</div>
+              </motion.div>
+            </div>
+          )}
+
+          <div className="grid grid-2">
+            {relatorio && (
+              <motion.section className="glass glass-pad" {...fadeUp}>
+                <div className="card-title">
+                  <span className="ico"><Banknote /></span>
+                  <h3>Como entrou</h3>
+                </div>
+                <div className="split">
+                  {['DINHEIRO', 'DEBITO', 'CREDITO', 'PIX'].map((forma) => {
+                    const valor = Number(relatorio.por_forma[forma] || 0)
+                    const pct = relatorio.total_vendido ? (valor / relatorio.total_vendido) * 100 : 0
+                    return (
+                      <div className="split-row" key={forma}>
+                        <div className="sl">
+                          <span className="nm"><span className="sw" style={{ background: FORMA_COR[forma] }} />{FORMA_LABEL[forma]}</span>
+                          <span className="mono muted">{brl(valor)}</span>
+                        </div>
+                        <div className="track"><div className="bar" style={{ width: `${Math.max(2, pct)}%`, background: FORMA_COR[forma] }} /></div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </motion.section>
+            )}
+
+            <motion.section className="glass glass-pad" {...fadeUp}>
+              <div className="card-title">
+                <span className="ico"><Lock /></span>
+                <h3>Fechar o caixa</h3>
+                <span className="chip ok" style={{ marginLeft: 'auto' }}><span className="chip-dot" /> aberto</span>
+              </div>
+              <p className="muted" style={{ fontSize: 13, marginBottom: 14 }}>
+                Caixa #{caixa.id} aberto às {new Date(caixa.aberto_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.
               </p>
               <form className="stack" onSubmit={fechar}>
                 <label className="field">
-                  <span className="row" style={{ gap: 6 }}><Scale size={14} /> Dinheiro contado na gaveta</span>
+                  <span className="row spread">
+                    <span className="row" style={{ gap: 6 }}><Banknote size={14} /> Dinheiro contado na gaveta</span>
+                    <DiffChip valor={difGaveta} />
+                  </span>
                   <input type="number" step="0.01" placeholder="0,00" value={contado} onChange={(e) => setContado(e.target.value)} required />
+                  <small className="muted" style={{ fontSize: 12 }}>Esperado: {brl(esperadoGaveta)}</small>
                 </label>
                 <label className="field">
-                  Total do relatório das maquininhas
+                  <span className="row spread">
+                    <span className="row" style={{ gap: 6 }}><CreditCard size={14} /> Total do relatório das maquininhas</span>
+                    <DiffChip valor={difMaq} />
+                  </span>
                   <input type="number" step="0.01" placeholder="0,00" value={maquininhas} onChange={(e) => setMaquininhas(e.target.value)} />
+                  <small className="muted" style={{ fontSize: 12 }}>No sistema: {brl(esperadoCartao)}</small>
                 </label>
-                <button className="btn btn-primary btn-block" disabled={carregando}>
-                  {carregando ? <Spinner /> : <><Lock size={17} /> Fechar e conciliar</>}
+                <button className="btn btn-primary btn-lg btn-block" disabled={carregando}>
+                  {carregando ? <Spinner /> : <><Lock size={18} /> Fechar caixa</>}
                 </button>
               </form>
-            </>
-          )}
-        </motion.section>
-
-        <motion.section className="glass glass-pad" {...fadeUp}>
-          <div className="card-title">
-            <span className="ico"><Scale /></span>
-            <h3>Conferência do dia</h3>
+            </motion.section>
           </div>
-
-          {!relatorio ? (
-            <p className="muted" style={{ fontSize: 14 }}>Abra o caixa para ver o resumo do dia.</p>
-          ) : (
-            <div>
-              <div style={{ background: 'var(--emerald-soft)', border: '1px solid #cfe3d9', borderRadius: 12, padding: '14px 16px', marginBottom: 14 }}>
-                <span className="label" style={{ color: 'var(--emerald)', fontWeight: 600 }}>Total vendido</span>
-                <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>
-                  {brl(relatorio.total_vendido)}
-                </div>
-              </div>
-              {Object.entries(relatorio.por_forma).map(([forma, valor]) => (
-                <LinhaResumo key={forma} label={forma} valor={valor} />
-              ))}
-              <LinhaResumo label="Dinheiro esperado" valor={relatorio.dinheiro_esperado} forte />
-              <LinhaResumo label="Dinheiro contado" valor={relatorio.dinheiro_contado} />
-              <LinhaResumo label="Diferença na gaveta" valor={relatorio.diferenca_dinheiro} destaque />
-              <LinhaResumo label="Cartão e Pix no sistema" valor={relatorio.cartao_pix_sistema} forte />
-              <LinhaResumo label="Diferença das maquininhas" valor={relatorio.diferenca_maquininhas} destaque />
-              <div className="row spread" style={{ paddingTop: 14, marginTop: 6 }}>
-                <span className="badge">{relatorio.comandas_fechadas} fechadas</span>
-                <span className="badge">{relatorio.comandas_abertas} ainda abertas</span>
-              </div>
-            </div>
-          )}
-        </motion.section>
-      </div>
+        </>
+      )}
     </div>
   )
 }
