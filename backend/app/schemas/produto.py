@@ -15,10 +15,11 @@ class CategoriaOut(BaseModel):
 
 class ProdutoIn(BaseModel):
     nome: str = Field(min_length=2, max_length=120)
-    preco: float = Field(gt=0)
+    preco: float = Field(default=0, ge=0)
     tipo: TipoProduto = "UNIDADE"
     categoria_id: int | None = None
     ativo: bool = True
+    baixa_ao_ativar: bool = False
 
 class ProdutoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -28,5 +29,6 @@ class ProdutoOut(BaseModel):
     preco: float
     tipo: TipoProduto
     ativo: bool
+    baixa_ao_ativar: bool = False
     categoria_id: int | None
     categoria: CategoriaOut | None = None

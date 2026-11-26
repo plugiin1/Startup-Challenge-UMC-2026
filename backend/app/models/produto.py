@@ -23,6 +23,7 @@ class Produto(Base):
 
     tipo: Mapped[str] = mapped_column(String(10), default="UNIDADE")
     ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+    baixa_ao_ativar: Mapped[bool] = mapped_column(Boolean, default=False)
 
     categoria: Mapped[Categoria | None] = relationship(back_populates="produtos")
     ficha: Mapped[list["FichaTecnica"]] = relationship(
