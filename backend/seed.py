@@ -8,7 +8,6 @@ USUARIOS = [
     ("Gerente", "gerente@restaurante.com", "gerente123", "GERENTE"),
     ("Caixa", "caixa@restaurante.com", "caixa123", "CAIXA"),
     ("Garcom", "garcom@restaurante.com", "garcom123", "GARCOM"),
-    ("Cozinha", "cozinha@restaurante.com", "cozinha123", "COZINHA"),
 ]
 
 CATEGORIAS = ["Buffet", "Pratos", "Porções", "Bebidas", "Sobremesas"]

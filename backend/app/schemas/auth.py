@@ -2,8 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-Perfil = Literal["GERENTE", "CAIXA", "GARCOM", "COZINHA"]
-PerfilNovo = Literal["CAIXA", "GARCOM", "COZINHA"]
+Perfil = Literal["GERENTE", "CAIXA", "GARCOM"]
+PerfilNovo = Literal["CAIXA", "GARCOM"]
 
 class LoginIn(BaseModel):
     email: EmailStr
