@@ -37,6 +37,56 @@ def criar_insumo(
     db.refresh(insumo)
     return insumo
 
+@router.put("/insumos/{insumo_id}", response_model=InsumoOut)
+def atualizar_insumo(
+    insumo_id: int,
+    dados: InsumoIn,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(exigir_perfil("GERENTE")),
+) -> Insumo:
+    insumo = db.get(Insumo, insumo_id)
+    if insumo is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Insumo nao encontrado")
+
+    atual = float(insumo.qtd_atual)
+    novo = float(dados.qtd_atual)
+
+    insumo.nome = dados.nome
+    insumo.unidade = dados.unidade
+    insumo.qtd_minima = dados.qtd_minima
+    insumo.qtd_atual = novo
+    insumo.ingrediente = dados.ingrediente
+
+    if novo != atual:
+        db.add(
+            MovEstoque(
+                insumo_id=insumo.id,
+                tipo="AJUSTE",
+                qtd=abs(novo - atual),
+                observacao="Ajuste manual",
+                usuario_id=usuario.id,
+            )
+        )
+
+    db.commit()
+    db.refresh(insumo)
+    return insumo
+
+@router.delete("/insumos/{insumo_id}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_insumo(
+    insumo_id: int,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(exigir_perfil("GERENTE")),
+) -> None:
+    insumo = db.get(Insumo, insumo_id)
+    if insumo is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Insumo nao encontrado")
+
+    db.query(FichaTecnica).filter(FichaTecnica.insumo_id == insumo_id).delete()
+    db.query(MovEstoque).filter(MovEstoque.insumo_id == insumo_id).delete()
+    db.delete(insumo)
+    db.commit()
+
 @router.get("/alertas", response_model=list[InsumoOut])
 def alertas_de_estoque(
     db: Session = Depends(get_db),
@@ -122,3 +172,40 @@ def adicionar_a_ficha(
     db.commit()
     db.refresh(linha)
     return linha
+
+@router.put("/ficha/{produto_id}", response_model=list[FichaTecnicaOut])
+def substituir_ficha(
+    produto_id: int,
+    itens: list[FichaTecnicaIn],
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(exigir_perfil("GERENTE")),
+) -> list[FichaTecnica]:
+    if db.get(Produto, produto_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Produto nao encontrado")
+
+    db.query(FichaTecnica).filter(FichaTecnica.produto_id == produto_id).delete()
+    for dados in itens:
+        if db.get(Insumo, dados.insumo_id) is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Insumo nao encontrado")
+        db.add(
+            FichaTecnica(
+                produto_id=produto_id,
+                insumo_id=dados.insumo_id,
+                qtd_usada=dados.qtd_usada,
+            )
+        )
+    db.commit()
+    return db.query(FichaTecnica).filter(FichaTecnica.produto_id == produto_id).all()
+
+@router.delete("/ficha/{produto_id}/{insumo_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remover_da_ficha(
+    produto_id: int,
+    insumo_id: int,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(exigir_perfil("GERENTE")),
+) -> None:
+    db.query(FichaTecnica).filter(
+        FichaTecnica.produto_id == produto_id,
+        FichaTecnica.insumo_id == insumo_id,
+    ).delete()
+    db.commit()
