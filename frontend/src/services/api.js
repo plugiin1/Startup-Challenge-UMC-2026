@@ -71,13 +71,6 @@ export const api = {
   fecharComanda: (id, pagamentos, aplicar_taxa = true) =>
     request(`/comandas/${id}/fechar`, { method: 'POST', body: { pagamentos, aplicar_taxa } }),
 
-  pedidosCozinha: () => request('/cozinha/pedidos'),
-  mudarStatusItem: (itemId, status) =>
-    request(`/cozinha/itens/${itemId}`, {
-      method: 'PATCH',
-      body: { status_cozinha: status },
-    }),
-
   insumos: () => request('/estoque/insumos'),
   alertasEstoque: () => request('/estoque/alertas'),
   movimentarEstoque: (dados) =>

@@ -3,8 +3,8 @@ import { UserPlus, Power } from 'lucide-react'
 import { api } from '../services/api'
 import { Modal, Spinner } from '../lib/ui'
 
-const PERFIS = ['CAIXA', 'GARCOM', 'COZINHA']
-const COR = { GERENTE: '#ea1d2c', CAIXA: '#2f6fd0', GARCOM: '#138a5e', COZINHA: '#f97316' }
+const PERFIS = ['CAIXA', 'GARCOM']
+const COR = { GERENTE: '#ea1d2c', CAIXA: '#2f6fd0', GARCOM: '#138a5e' }
 const VAZIO = { nome: '', email: '', senha: '', perfil: 'GARCOM' }
 
 export default function Usuarios() {
@@ -48,7 +48,7 @@ export default function Usuarios() {
       <div className="page-head">
         <div className="eyebrow">Gerência</div>
         <h1>Usuários</h1>
-        <p>Cadastre a equipe (caixa, garçom e cozinha). Só o gerente acessa esta tela.</p>
+        <p>Cadastre a equipe (caixa e garçom). Só o gerente acessa esta tela.</p>
       </div>
 
       {erro && <p className="form-msg-erro" style={{ marginBottom: 16 }}>{erro}</p>}

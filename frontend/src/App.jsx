@@ -6,7 +6,6 @@ import Caixa from './pages/Caixa'
 import Cardapio from './pages/Cardapio'
 import Comandas from './pages/Comandas'
 import Configuracoes from './pages/Configuracoes'
-import Cozinha from './pages/Cozinha'
 import Dashboard from './pages/Dashboard'
 import Estoque from './pages/Estoque'
 import Login from './pages/Login'
@@ -14,11 +13,10 @@ import Relatorios from './pages/Relatorios'
 import Usuarios from './pages/Usuarios'
 import { Spinner } from './lib/ui'
 
-const TODOS = ['GERENTE', 'CAIXA', 'GARCOM', 'COZINHA']
+const TODOS = ['GERENTE', 'CAIXA', 'GARCOM']
 const MENU = [
   { path: '/dashboard', nome: 'Visão geral', perfis: TODOS },
   { path: '/comandas', nome: 'Comandas', perfis: ['GERENTE', 'CAIXA', 'GARCOM'] },
-  { path: '/cozinha', nome: 'Cozinha', perfis: TODOS },
   { path: '/estoque', nome: 'Estoque', perfis: ['GERENTE', 'CAIXA'] },
   { path: '/caixa', nome: 'Caixa', perfis: ['GERENTE', 'CAIXA'] },
   { path: '/relatorios', nome: 'Relatórios', perfis: ['GERENTE', 'CAIXA'] },
@@ -31,7 +29,6 @@ const PERFIL_COR = {
   GERENTE: '#ea1d2c',
   CAIXA: '#2f6fd0',
   GARCOM: '#138a5e',
-  COZINHA: '#f97316',
 }
 
 function TopNav() {
@@ -92,7 +89,7 @@ function Rotas() {
     )
   if (!usuario) return <Login />
 
-  const inicial = usuario.perfil === 'COZINHA' ? '/cozinha' : '/dashboard'
+  const inicial = '/dashboard'
 
   return (
     <div className="shell">
@@ -101,7 +98,6 @@ function Rotas() {
         <Routes>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/comandas" element={<Comandas />} />
-          <Route path="/cozinha" element={<Cozinha />} />
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/caixa" element={<Caixa />} />
           <Route path="/relatorios" element={<Relatorios />} />

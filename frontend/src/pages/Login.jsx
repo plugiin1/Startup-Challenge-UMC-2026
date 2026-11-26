@@ -7,11 +7,10 @@ const DEMOS = [
   { nome: 'Gerente', email: 'gerente@restaurante.com', senha: 'gerente123', cor: '#ea1d2c' },
   { nome: 'Caixa', email: 'caixa@restaurante.com', senha: 'caixa123', cor: '#2f6fd0' },
   { nome: 'Garçom', email: 'garcom@restaurante.com', senha: 'garcom123', cor: '#138a5e' },
-  { nome: 'Cozinha', email: 'cozinha@restaurante.com', senha: 'cozinha123', cor: '#f97316' },
 ]
 
 const FEATS = [
-  'O pedido na comanda já cai na cozinha',
+  'A comanda da mesa vai direto para o caixa',
   'O estoque baixa sozinho e avisa quando falta',
   'O caixa bate com a gaveta e as maquininhas',
   'O dia inteiro num painel, em tempo real',
@@ -58,7 +57,7 @@ export default function Login() {
         <Brand />
         <h2>Tudo do seu restaurante, num lugar só.</h2>
         <p className="lead">
-          Comandas, cozinha, estoque e caixa conversando entre si, do primeiro pedido ao fechamento
+          Comandas, estoque e caixa conversando entre si, do primeiro pedido ao fechamento
           do dia.
         </p>
         <ul className="feat-list">

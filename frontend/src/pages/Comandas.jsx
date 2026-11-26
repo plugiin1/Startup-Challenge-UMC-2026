@@ -22,7 +22,6 @@ const FORMAS = [
   { id: 'CREDITO', nome: 'Crédito', icon: Landmark },
   { id: 'PIX', nome: 'Pix', icon: QrCode },
 ]
-const STATUS_CHIP = { RECEBIDO: 'neutral', PREPARANDO: 'warn', PRONTO: 'ok', ENTREGUE: 'info' }
 const TAGS_RAPIDAS = [
   'Sem cebola',
   'Sem gelo',
@@ -414,9 +413,6 @@ export default function Comandas() {
                       <div className="oi-main">
                         <b>{i.peso_kg ? `${i.peso_kg} kg` : `${i.qtd}×`} {i.produto_nome}</b>
                         {i.observacao && <small>{i.observacao}</small>}
-                        <span className={`chip ${STATUS_CHIP[i.status_cozinha] || 'neutral'}`} style={{ marginTop: 4 }}>
-                          <span className="chip-dot" />{i.status_cozinha}
-                        </span>
                       </div>
                       <div className="oi-right">
                         <span className="oi-val mono">{brl(i.subtotal)}</span>

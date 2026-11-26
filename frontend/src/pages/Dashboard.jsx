@@ -37,7 +37,7 @@ function StatTile({ label, value, sub, dot, delay }) {
 
 export default function Dashboard() {
   const { usuario } = useAuth()
-  const [d, setD] = useState({ comandas: [], insumos: [], pedidos: [], relatorio: null, caixa: null, top: [] })
+  const [d, setD] = useState({ comandas: [], insumos: [], relatorio: null, caixa: null, top: [] })
 
   useEffect(() => {
     let vivo = true
@@ -46,17 +46,15 @@ export default function Dashboard() {
     Promise.all([
       safe(api.comandas('ABERTA')),
       safe(api.insumos()),
-      safe(api.pedidosCozinha()),
       safe(api.caixaAtual()),
       safe(api.relatorioProdutos(hoje, hoje, 5)),
-    ]).then(async ([comandas, insumos, pedidos, caixa, top]) => {
+    ]).then(async ([comandas, insumos, caixa, top]) => {
       let relatorio = null
       if (caixa) relatorio = await safe(api.relatorioCaixa())
       if (!vivo) return
       setD({
         comandas: comandas || [],
         insumos: insumos || [],
-        pedidos: pedidos || [],
         caixa: caixa || null,
         relatorio,
         top: top || [],
@@ -68,9 +66,10 @@ export default function Dashboard() {
   }, [])
 
   const totalComandas = d.comandas.reduce((s, c) => s + Number(c.total || 0), 0)
-  const emPreparo = d.pedidos.filter((p) => p.status_cozinha === 'RECEBIDO' || p.status_cozinha === 'PREPARANDO').length
   const alertas = d.insumos.filter((i) => i.abaixo_do_minimo)
   const vendasDia = d.relatorio?.total_vendido ?? 0
+  const fechadas = d.relatorio?.comandas_fechadas ?? 0
+  const ticket = fechadas ? vendasDia / fechadas : 0
 
   const porForma = d.relatorio?.por_forma || {}
   const totalForma = Object.values(porForma).reduce((s, v) => s + Number(v || 0), 0)
@@ -98,7 +97,7 @@ export default function Dashboard() {
       <div className="grid kpis" style={{ marginBottom: 18 }}>
         <StatTile label="Vendas do dia" value={brl(vendasDia)} sub={d.caixa ? 'desde a abertura do caixa' : 'abra o caixa para medir'} dot="#138a5e" delay={0.02} />
         <StatTile label="Comandas abertas" value={d.comandas.length} sub={`${brl(totalComandas)} em aberto`} dot="#2f6fd0" delay={0.07} />
-        <StatTile label="Na cozinha" value={emPreparo} sub="itens em preparo agora" dot="#f97316" delay={0.12} />
+        <StatTile label="Ticket médio" value={brl(ticket)} sub="por comanda fechada hoje" dot="#f97316" delay={0.12} />
         <StatTile label="Estoque em alerta" value={alertas.length} sub={alertas.length ? 'repor hoje' : 'tudo em dia'} dot={alertas.length ? '#d92d20' : '#138a5e'} delay={0.17} />
       </div>
 
