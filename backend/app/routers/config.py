@@ -32,7 +32,6 @@ def atualizar_config(
 ) -> Configuracao:
     cfg = obter_config(db)
     cfg.nome_restaurante = dados.nome_restaurante
-    cfg.taxa_servico_percent = dados.taxa_servico_percent
     db.commit()
     db.refresh(cfg)
     return cfg
