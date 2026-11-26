@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { Spinner } from '../lib/ui'
 
 const DEMOS = [
-  { nome: 'Admin', email: 'admin@restaurante.com', senha: 'admin123', cor: '#ea1d2c' },
+  { nome: 'Gerente', email: 'gerente@restaurante.com', senha: 'gerente123', cor: '#ea1d2c' },
   { nome: 'Caixa', email: 'caixa@restaurante.com', senha: 'caixa123', cor: '#2f6fd0' },
   { nome: 'Garçom', email: 'garcom@restaurante.com', senha: 'garcom123', cor: '#138a5e' },
   { nome: 'Cozinha', email: 'cozinha@restaurante.com', senha: 'cozinha123', cor: '#f97316' },
@@ -29,8 +29,8 @@ function Brand() {
 
 export default function Login() {
   const { entrar } = useAuth()
-  const [email, setEmail] = useState('admin@restaurante.com')
-  const [senha, setSenha] = useState('admin123')
+  const [email, setEmail] = useState('gerente@restaurante.com')
+  const [senha, setSenha] = useState('gerente123')
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
 
