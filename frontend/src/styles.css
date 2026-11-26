@@ -1409,6 +1409,72 @@ label.field {
   }
 }
 
+.pay-sum {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.taxa-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-2);
+  background: var(--surface);
+  cursor: pointer;
+}
+.taxa-toggle.on {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.taxa-toggle span b {
+  display: block;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.taxa-toggle span small {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.taxa-toggle .mono {
+  font-weight: 700;
+}
+.pay-total {
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.pay-total b {
+  font-size: 20px;
+  color: var(--ink);
+}
+.pay-line {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.pay-line select {
+  flex: 1;
+}
+.pay-line input {
+  width: 120px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.pay-falta {
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--amber);
+  margin: 14px 0;
+}
+.pay-falta.ok {
+  color: var(--green);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;
