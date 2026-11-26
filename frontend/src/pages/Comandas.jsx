@@ -14,7 +14,7 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { api } from '../services/api'
-import { brl, Empty, Modal, Spinner, mesaLabel } from '../lib/ui'
+import { brl, Empty, Modal, Spinner } from '../lib/ui'
 
 const FORMAS = [
   { id: 'DINHEIRO', nome: 'Dinheiro', icon: Banknote },
@@ -49,17 +49,30 @@ function QtyStepper({ value, onChange }) {
   )
 }
 
-function ItemModal({ produto, onClose, onConfirm, enviando }) {
+function ItemModal({ produto, marmitexPreco, onClose, onConfirm, enviando }) {
   const [qtd, setQtd] = useState(1)
   const [peso, setPeso] = useState('')
   const [tags, setTags] = useState([])
   const [texto, setTexto] = useState('')
+  const [marmitex, setMarmitex] = useState(false)
 
   const kg = produto?.tipo === 'KG'
+  const ehBebida = produto?.categoria?.nome === 'Bebidas'
   const toggleTag = (t) => setTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]))
 
+  useEffect(() => {
+    if (produto) {
+      setQtd(1)
+      setPeso('')
+      setTags([])
+      setTexto('')
+      setMarmitex(false)
+    }
+  }, [produto])
+
   const obsFinal = [...tags, texto.trim()].filter(Boolean).join(', ')
-  const subtotal = produto ? (kg ? Number(peso || 0) * Number(produto.preco) : qtd * Number(produto.preco)) : 0
+  const base = produto ? (kg ? Number(peso || 0) * Number(produto.preco) : qtd * Number(produto.preco)) : 0
+  const subtotal = base + (marmitex ? Number(marmitexPreco || 0) : 0)
 
   return (
     <Modal
@@ -80,27 +93,46 @@ function ItemModal({ produto, onClose, onConfirm, enviando }) {
         </div>
       )}
 
-      <div className="field" style={{ marginBottom: 8 }}>Observações</div>
-      <div className="tag-row">
-        {TAGS_RAPIDAS.map((t) => (
-          <button key={t} type="button" className={`tag-opt ${tags.includes(t) ? 'on' : ''}`} onClick={() => toggleTag(t)}>
-            {t}
-          </button>
-        ))}
-      </div>
-      <textarea
-        rows={2}
-        placeholder="Outro detalhe (ex: coca com gelo e limão espremido)"
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-        style={{ marginTop: 10, resize: 'vertical' }}
-      />
+      {ehBebida && (
+        <>
+          <div className="field" style={{ marginBottom: 8 }}>Observações</div>
+          <div className="tag-row">
+            {TAGS_RAPIDAS.map((t) => (
+              <button key={t} type="button" className={`tag-opt ${tags.includes(t) ? 'on' : ''}`} onClick={() => toggleTag(t)}>
+                {t}
+              </button>
+            ))}
+          </div>
+          <textarea
+            rows={2}
+            placeholder="Outro detalhe (ex: coca com gelo e limão espremido)"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            style={{ marginTop: 10, resize: 'vertical' }}
+          />
+        </>
+      )}
+
+      {kg && marmitexPreco != null && (
+        <button
+          type="button"
+          className={`opt-toggle ${marmitex ? 'on' : ''}`}
+          style={{ marginTop: 14 }}
+          onClick={() => setMarmitex((v) => !v)}
+        >
+          <span>
+            <b>Levar em marmitex</b>
+            <small>{marmitex ? 'embalagem incluída, toque para remover' : 'toque para adicionar a embalagem'}</small>
+          </span>
+          <span className="mono">+ {brl(marmitexPreco)}</span>
+        </button>
+      )}
 
       <button
         className="btn btn-primary btn-lg btn-block"
         style={{ marginTop: 18 }}
         disabled={enviando || (kg && !Number(peso))}
-        onClick={() => onConfirm({ qtd, peso, observacao: obsFinal })}
+        onClick={() => onConfirm({ qtd, peso, observacao: obsFinal, marmitex })}
       >
         {enviando ? <Spinner /> : <><Plus size={17} /> Adicionar {brl(subtotal)}</>}
       </button>
@@ -108,28 +140,13 @@ function ItemModal({ produto, onClose, onConfirm, enviando }) {
   )
 }
 
-function PaymentModal({ open, comanda, taxaPercent, onClose, onConfirm, fechando }) {
-  const subtotal = Number(comanda?.total || 0)
-  const [aplicarTaxa, setAplicarTaxa] = useState(true)
+function PaymentModal({ open, comanda, onClose, onConfirm, fechando }) {
+  const totalDevido = r2(comanda?.total || 0)
   const [linhas, setLinhas] = useState([{ forma: 'PIX', valor: '' }])
 
-  const taxa = aplicarTaxa ? r2((subtotal * taxaPercent) / 100) : 0
-  const totalDevido = r2(subtotal + taxa)
-
   useEffect(() => {
-    if (open) {
-      const total = r2(subtotal + r2((subtotal * taxaPercent) / 100))
-      setAplicarTaxa(true)
-      setLinhas([{ forma: 'PIX', valor: total.toFixed(2) }])
-    }
-  }, [open, subtotal, taxaPercent])
-
-  const alternarTaxa = () => {
-    const nova = !aplicarTaxa
-    setAplicarTaxa(nova)
-    const novoTotal = r2(subtotal + (nova ? r2((subtotal * taxaPercent) / 100) : 0))
-    if (linhas.length === 1) setLinhas([{ ...linhas[0], valor: novoTotal.toFixed(2) }])
-  }
+    if (open) setLinhas([{ forma: 'PIX', valor: totalDevido.toFixed(2) }])
+  }, [open, totalDevido])
 
   const soma = r2(linhas.reduce((s, l) => s + Number(l.valor || 0), 0))
   const falta = r2(totalDevido - soma)
@@ -143,7 +160,7 @@ function PaymentModal({ open, comanda, taxaPercent, onClose, onConfirm, fechando
     const pagamentos = linhas
       .map((l) => ({ forma: l.forma, valor: r2(l.valor) }))
       .filter((p) => p.valor > 0)
-    onConfirm(pagamentos, aplicarTaxa)
+    onConfirm(pagamentos)
   }
 
   return (
@@ -151,17 +168,9 @@ function PaymentModal({ open, comanda, taxaPercent, onClose, onConfirm, fechando
       open={open}
       onClose={onClose}
       title="Fechar comanda"
-      subtitle={comanda ? mesaLabel(comanda.mesa) : ''}
+      subtitle={comanda ? comanda.cliente : ''}
     >
       <div className="pay-sum">
-        <div className="row spread"><span className="muted">Subtotal</span><span className="mono">{brl(subtotal)}</span></div>
-        <button type="button" className={`taxa-toggle ${aplicarTaxa ? 'on' : ''}`} onClick={alternarTaxa}>
-          <span>
-            <b>Taxa de serviço ({taxaPercent}%)</b>
-            <small>{aplicarTaxa ? 'incluída, toque para remover' : 'removida, toque para incluir'}</small>
-          </span>
-          <span className="mono">{aplicarTaxa ? brl(taxa) : brl(0)}</span>
-        </button>
         <div className="row spread pay-total"><span>Total a pagar</span><b className="mono">{brl(totalDevido)}</b></div>
       </div>
 
@@ -204,12 +213,12 @@ export default function Comandas() {
   const [comandas, setComandas] = useState([])
   const [produtos, setProdutos] = useState([])
   const [ativa, setAtiva] = useState(null)
-  const [mesa, setMesa] = useState('')
+  const [nome, setNome] = useState('')
+  const [tel, setTel] = useState('')
+  const [pedirTel, setPedirTel] = useState(false)
   const [erro, setErro] = useState('')
-  const [taxaPercent, setTaxaPercent] = useState(10)
 
   const [busca, setBusca] = useState('')
-  const [cat, setCat] = useState('Todos')
   const [selecionado, setSelecionado] = useState(null)
   const [addLoad, setAddLoad] = useState(false)
 
@@ -229,33 +238,43 @@ export default function Comandas() {
   useEffect(() => {
     carregar()
     api.produtos().then(setProdutos).catch((e) => setErro(e.message))
-    api.config().then((c) => setTaxaPercent(Number(c.taxa_servico_percent))).catch(() => {})
   }, [])
 
-  const categorias = useMemo(() => {
-    const nomes = new Set(produtos.map((p) => p.categoria?.nome).filter(Boolean))
-    return ['Todos', ...nomes]
-  }, [produtos])
+  const buffetProd = useMemo(() => produtos.find((p) => !p.baixa_ao_ativar && p.tipo === 'KG'), [produtos])
+  const marmitexProd = useMemo(() => produtos.find((p) => /marmitex|embalagem/i.test(p.nome)), [produtos])
+  const destaques = useMemo(() => [buffetProd].filter(Boolean), [buffetProd])
 
   const visiveis = useMemo(() => {
     const q = busca.trim().toLowerCase()
+    const ocultos = new Set(destaques.map((p) => p.id))
+    if (marmitexProd) ocultos.add(marmitexProd.id)
     return produtos.filter((p) => {
-      const okCat = cat === 'Todos' || p.categoria?.nome === cat
-      const okBusca = !q || p.nome.toLowerCase().includes(q)
-      return okCat && okBusca
+      if (p.baixa_ao_ativar || ocultos.has(p.id)) return false
+      return !q || p.nome.toLowerCase().includes(q)
     })
-  }, [produtos, busca, cat])
+  }, [produtos, busca, destaques, marmitexProd])
 
-  const abrirMesa = async (e) => {
+  const abrirComandaNova = async (e) => {
     e.preventDefault()
     setErro('')
+    if (pedirTel && !tel.trim()) {
+      setErro('Informe o telefone para diferenciar os clientes com o mesmo nome.')
+      return
+    }
     try {
-      const nova = await api.abrirComanda(mesa, null)
-      setMesa('')
+      const nova = await api.abrirComanda(nome.trim(), tel.trim() || null)
+      setNome('')
+      setTel('')
+      setPedirTel(false)
       await carregar()
       setAtiva(nova)
     } catch (err) {
-      setErro(err.message)
+      if (err.code === 'TELEFONE_NECESSARIO') {
+        setPedirTel(true)
+        setErro(err.message)
+      } else {
+        setErro(err.message)
+      }
     }
   }
 
@@ -270,14 +289,14 @@ export default function Comandas() {
 
   const escolherProduto = (p) => {
     if (!ativa) {
-      setErro('Selecione ou abra uma mesa antes de lançar itens.')
+      setErro('Selecione ou abra uma comanda antes de lançar itens.')
       return
     }
     setErro('')
     setSelecionado(p)
   }
 
-  const confirmarItem = async ({ qtd, peso, observacao }) => {
+  const confirmarItem = async ({ qtd, peso, observacao, marmitex }) => {
     setAddLoad(true)
     try {
       await api.lancarItem(ativa.id, {
@@ -286,6 +305,9 @@ export default function Comandas() {
         peso_kg: peso ? Number(peso) : null,
         observacao: observacao || null,
       })
+      if (marmitex && marmitexProd) {
+        await api.lancarItem(ativa.id, { produto_id: marmitexProd.id, qtd: 1, peso_kg: null, observacao: null })
+      }
       setSelecionado(null)
       await selecionarMesa(ativa.id)
       await carregar()
@@ -322,11 +344,11 @@ export default function Comandas() {
     }
   }
 
-  const confirmarPagamento = async (pagamentos, aplicarTaxa) => {
+  const confirmarPagamento = async (pagamentos) => {
     setFechando(true)
     setErro('')
     try {
-      await api.fecharComanda(ativa.id, pagamentos, aplicarTaxa)
+      await api.fecharComanda(ativa.id, pagamentos)
       setPagando(false)
       setAtiva(null)
       await carregar()
@@ -342,18 +364,27 @@ export default function Comandas() {
       <div className="page-head">
         <div className="eyebrow">Salão</div>
         <h1>Comandas</h1>
-        <p>Escolha a mesa, toque no produto e defina a quantidade e as observações.</p>
+        <p>Abra a comanda no nome do cliente, toque no produto e defina a quantidade e as observações.</p>
       </div>
 
       <div className="pos-tables">
         {comandas.map((c) => (
           <button key={c.id} className={`table-chip ${ativa?.id === c.id ? 'on' : ''}`} onClick={() => selecionarMesa(c.id)}>
-            <b>{mesaLabel(c.mesa)}</b>
-            <span>{brl(c.total)}</span>
+            <b>{c.cliente}</b>
+            <span>{c.telefone ? `${brl(c.total)} (${c.telefone})` : brl(c.total)}</span>
           </button>
         ))}
-        <form className="table-new" onSubmit={abrirMesa}>
-          <input placeholder="Nº da mesa" value={mesa} onChange={(e) => setMesa(e.target.value)} required />
+        <form className="table-new" onSubmit={abrirComandaNova}>
+          <input
+            placeholder="Nome e sobrenome"
+            value={nome}
+            onChange={(e) => { setNome(e.target.value); if (pedirTel) { setPedirTel(false); setTel('') } }}
+            required
+            minLength={2}
+          />
+          {pedirTel && (
+            <input placeholder="Telefone" value={tel} onChange={(e) => setTel(e.target.value)} autoFocus />
+          )}
           <button className="btn btn-primary btn-sm"><Plus size={16} /> Abrir</button>
         </form>
       </div>
@@ -362,20 +393,22 @@ export default function Comandas() {
 
       <div className="pos-grid">
         <section className="glass glass-pad">
+          {destaques.length > 0 && (
+            <div className="quick-actions">
+              {destaques.map((p) => (
+                <button key={p.id} className="quick-btn" onClick={() => escolherProduto(p)}>
+                  <b>{p.nome}</b>
+                  <span>{p.tipo === 'KG' ? `${brl(p.preco)}/kg` : brl(p.preco)}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <div className="menu-toolbar">
             <div className="search-box">
               <Search size={17} />
               <input placeholder="Buscar produto..." value={busca} onChange={(e) => setBusca(e.target.value)} />
             </div>
           </div>
-          <div className="cat-chips">
-            {categorias.map((c) => (
-              <button key={c} className={`cat-chip ${cat === c ? 'on' : ''}`} onClick={() => setCat(c)}>
-                {c}
-              </button>
-            ))}
-          </div>
-
           {visiveis.length ? (
             <div className="menu-grid">
               {visiveis.map((p) => (
@@ -395,12 +428,12 @@ export default function Comandas() {
 
         <section className="glass glass-pad order-panel">
           {!ativa ? (
-            <Empty icon={Receipt}>Selecione uma mesa para começar a comanda.</Empty>
+            <Empty icon={Receipt}>Selecione ou abra uma comanda no nome do cliente.</Empty>
           ) : (
             <motion.div key={ativa.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="order-head">
                 <div>
-                  <h3>{mesaLabel(ativa.mesa)}</h3>
+                  <h3>{ativa.cliente}</h3>
                   <span className="faint" style={{ fontSize: 12 }}>Comanda #{ativa.id}</span>
                 </div>
                 <span className="badge">{ativa.itens?.length || 0} itens</span>
@@ -444,12 +477,11 @@ export default function Comandas() {
         </section>
       </div>
 
-      <ItemModal produto={selecionado} enviando={addLoad} onClose={() => !addLoad && setSelecionado(null)} onConfirm={confirmarItem} />
+      <ItemModal produto={selecionado} marmitexPreco={marmitexProd ? Number(marmitexProd.preco) : null} enviando={addLoad} onClose={() => !addLoad && setSelecionado(null)} onConfirm={confirmarItem} />
 
       <PaymentModal
         open={pagando}
         comanda={ativa}
-        taxaPercent={taxaPercent}
         fechando={fechando}
         onClose={() => !fechando && setPagando(false)}
         onConfirm={confirmarPagamento}
@@ -459,7 +491,7 @@ export default function Comandas() {
         open={confirmCancel}
         onClose={() => !cancelando && setConfirmCancel(false)}
         title="Cancelar comanda"
-        subtitle={ativa ? `${mesaLabel(ativa.mesa)}. Isso remove todos os itens e devolve os insumos ao estoque.` : ''}
+        subtitle={ativa ? `${ativa.cliente}. Isso remove todos os itens e devolve os insumos ao estoque.` : ''}
       >
         <div className="row" style={{ gap: 10 }}>
           <button className="btn btn-block" onClick={() => setConfirmCancel(false)} disabled={cancelando}>Voltar</button>

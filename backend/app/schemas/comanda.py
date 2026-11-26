@@ -9,8 +9,8 @@ StatusComanda = Literal["ABERTA", "FECHADA", "CANCELADA"]
 StatusCozinha = Literal["RECEBIDO", "PREPARANDO", "PRONTO", "ENTREGUE"]
 
 class AbrirComandaIn(BaseModel):
-    mesa: str = Field(min_length=1, max_length=20)
-    cliente: str | None = Field(default=None, max_length=120)
+    cliente: str = Field(min_length=2, max_length=80)
+    telefone: str | None = Field(default=None, max_length=20)
 
 class ItemComandaIn(BaseModel):
     produto_id: int
@@ -37,21 +37,19 @@ class ComandaResumoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    mesa: str
+    mesa: str | None = None
     cliente: str | None
+    telefone: str | None = None
     status: StatusComanda
     aberta_em: datetime
     fechada_em: datetime | None
     total: float
-    taxa_servico: float = 0
-    total_com_taxa: float = 0
 
 class ComandaOut(ComandaResumoOut):
     itens: list[ItemComandaOut] = []
 
 class FecharComandaIn(BaseModel):
     pagamentos: list[PagamentoIn] = Field(min_length=1)
-    aplicar_taxa: bool = True
 
 class StatusCozinhaIn(BaseModel):
     status_cozinha: StatusCozinha

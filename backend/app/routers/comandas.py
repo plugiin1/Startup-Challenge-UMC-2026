@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.deps import exigir_perfil
@@ -14,12 +15,11 @@ from app.schemas import (
     ItemComandaIn,
     ItemComandaOut,
 )
-from app.routers.config import obter_config
 from app.services import caixa_service, estoque_service
 
 router = APIRouter(prefix="/comandas", tags=["comandas"])
 
-OPERADORES = ("CAIXA", "GARCOM")
+OPERADORES = ("CAIXA",)
 
 def _buscar_comanda(db: Session, comanda_id: int) -> Comanda:
     comanda = db.get(Comanda, comanda_id)
@@ -46,18 +46,33 @@ def abrir_comanda(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(exigir_perfil(*OPERADORES)),
 ) -> Comanda:
-    ja_aberta = (
-        db.query(Comanda)
-        .filter(Comanda.mesa == dados.mesa, Comanda.status == "ABERTA")
-        .first()
-    )
-    if ja_aberta is not None:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            f"A mesa {dados.mesa} ja tem a comanda {ja_aberta.id} aberta",
-        )
+    cliente = dados.cliente.strip()
+    tel = (dados.telefone or "").strip()
 
-    comanda = Comanda(mesa=dados.mesa, cliente=dados.cliente, usuario_id=usuario.id)
+    abertas = (
+        db.query(Comanda)
+        .filter(func.lower(Comanda.cliente) == cliente.lower(), Comanda.status == "ABERTA")
+        .all()
+    )
+    if abertas:
+        if not tel:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                detail={
+                    "code": "TELEFONE_NECESSARIO",
+                    "mensagem": f"Ja existe uma comanda aberta para {cliente}. Informe o telefone para diferenciar.",
+                },
+            )
+        if any((c.telefone or "").strip() == tel for c in abertas):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                detail={
+                    "code": "DUPLICADA",
+                    "mensagem": f"{cliente} com esse telefone ja tem uma comanda aberta.",
+                },
+            )
+
+    comanda = Comanda(cliente=cliente, telefone=tel or None, usuario_id=usuario.id)
     db.add(comanda)
     db.commit()
     db.refresh(comanda)
@@ -159,18 +174,15 @@ def fechar_comanda(
             "Nenhum caixa aberto. Abra o caixa antes de receber pagamentos",
         )
 
-    cfg = obter_config(db)
-    taxa = round(comanda.total * float(cfg.taxa_servico_percent) / 100, 2) if dados.aplicar_taxa else 0.0
-    total_devido = round(comanda.total + taxa, 2)
+    total_devido = round(comanda.total, 2)
 
     total_pago = round(sum(p.valor for p in dados.pagamentos), 2)
     if abs(total_pago - total_devido) > 0.01:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
-            f"Pagamentos somam {total_pago:.2f} e o total com taxa e {total_devido:.2f}",
+            f"Pagamentos somam {total_pago:.2f} e o total e {total_devido:.2f}",
         )
 
-    comanda.taxa_servico = taxa
     for pagamento in dados.pagamentos:
         db.add(
             Pagamento(

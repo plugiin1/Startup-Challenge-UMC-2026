@@ -54,7 +54,7 @@ def vendas(
     for c in comandas:
         dia = c.fechada_em.date().isoformat()
         acc = por_dia_map.setdefault(dia, [0.0, 0])
-        acc[0] += c.total_com_taxa
+        acc[0] += c.total
         acc[1] += 1
     por_dia = [
         VendaDiaOut(dia=dia, total=round(v[0], 2), comandas=int(v[1]))
