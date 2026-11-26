@@ -11,7 +11,7 @@ from app.services import caixa_service
 
 router = APIRouter(prefix="/caixa", tags=["caixa"])
 
-ACESSO = ("ADMIN", "CAIXA")
+ACESSO = ("GERENTE", "CAIXA")
 
 @router.get("/atual", response_model=CaixaOut | None)
 def caixa_atual(

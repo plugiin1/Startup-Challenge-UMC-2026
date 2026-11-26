@@ -34,7 +34,7 @@ def usuario_atual(
 
 def exigir_perfil(*perfis: str) -> Callable[[Usuario], Usuario]:
     def verificador(usuario: Usuario = Depends(usuario_atual)) -> Usuario:
-        if usuario.perfil != "ADMIN" and usuario.perfil not in perfis:
+        if usuario.perfil != "GERENTE" and usuario.perfil not in perfis:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Seu perfil nao tem acesso a esta operacao",
