@@ -5,7 +5,7 @@ import { brl, fadeUp } from '../lib/ui'
 
 const hoje = () => new Date().toISOString().slice(0, 10)
 const diasAtras = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10)
-const FORMA_COR = { DINHEIRO: '#138a5e', DEBITO: '#2f6fd0', CREDITO: '#ea1d2c', PIX: '#c06a12' }
+const FORMA_COR = { DINHEIRO: '#15705a', DEBITO: '#1f5d7a', CREDITO: '#6e1a15', PIX: '#a9711a' }
 const FORMA_LABEL = { DINHEIRO: 'Dinheiro', DEBITO: 'Débito', CREDITO: 'Crédito', PIX: 'Pix' }
 const fmtDia = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7)
 
@@ -67,19 +67,19 @@ export default function Relatorios() {
       {vendas && (
         <>
           <div className="grid kpis" style={{ marginBottom: 18 }}>
-            <motion.div className="glass stat" style={{ '--sbar': '#138a5e' }} {...fadeUp}>
+            <motion.div className="glass stat" style={{ '--sbar': '#15705a' }} {...fadeUp}>
               <div className="label">Total vendido</div>
               <div className="value">{brl(vendas.total_vendido)}</div>
             </motion.div>
-            <motion.div className="glass stat" style={{ '--sbar': '#2f6fd0' }} {...fadeUp}>
+            <motion.div className="glass stat" style={{ '--sbar': '#1f5d7a' }} {...fadeUp}>
               <div className="label">Comandas</div>
               <div className="value">{vendas.comandas}</div>
             </motion.div>
-            <motion.div className="glass stat" style={{ '--sbar': '#ea1d2c' }} {...fadeUp}>
+            <motion.div className="glass stat" style={{ '--sbar': '#6e1a15' }} {...fadeUp}>
               <div className="label">Ticket médio</div>
               <div className="value">{brl(vendas.ticket_medio)}</div>
             </motion.div>
-            <motion.div className="glass stat" style={{ '--sbar': '#f97316' }} {...fadeUp}>
+            <motion.div className="glass stat" style={{ '--sbar': '#c2601f' }} {...fadeUp}>
               <div className="label">Dias no período</div>
               <div className="value">{vendas.por_dia.length}</div>
             </motion.div>
@@ -118,7 +118,7 @@ export default function Relatorios() {
                         <span className="nm">{fmtDia(d.dia)}</span>
                         <span className="mono muted">{brl(d.total)} ({d.comandas})</span>
                       </div>
-                      <div className="track"><div className="bar" style={{ width: `${Math.max(4, (d.total / maxDia) * 100)}%`, background: '#ea1d2c' }} /></div>
+                      <div className="track"><div className="bar" style={{ width: `${Math.max(4, (d.total / maxDia) * 100)}%`, background: '#6e1a15' }} /></div>
                     </div>
                   ))}
                 </div>
@@ -143,7 +143,7 @@ export default function Relatorios() {
                         <td className="num mono">{p.quantidade}</td>
                         <td className="num mono">{brl(p.receita)}</td>
                         <td>
-                          <div className="track"><div className="bar" style={{ width: `${Math.max(4, (p.receita / maxProd) * 100)}%`, background: '#f97316' }} /></div>
+                          <div className="track"><div className="bar" style={{ width: `${Math.max(4, (p.receita / maxProd) * 100)}%`, background: '#c2601f' }} /></div>
                         </td>
                       </tr>
                     ))}

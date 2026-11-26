@@ -5,10 +5,10 @@ import { useAuth } from '../contexts/AuthContext'
 import { brl, fadeUp } from '../lib/ui'
 
 const FORMA_COR = {
-  DINHEIRO: '#138a5e',
-  DEBITO: '#2f6fd0',
-  CREDITO: '#ea1d2c',
-  PIX: '#c06a12',
+  DINHEIRO: '#15705a',
+  DEBITO: '#1f5d7a',
+  CREDITO: '#6e1a15',
+  PIX: '#a9711a',
 }
 const FORMA_LABEL = { DINHEIRO: 'Dinheiro', DEBITO: 'Débito', CREDITO: 'Crédito', PIX: 'Pix' }
 
@@ -95,10 +95,10 @@ export default function Dashboard() {
       </div>
 
       <div className="grid kpis" style={{ marginBottom: 18 }}>
-        <StatTile label="Vendas do dia" value={brl(vendasDia)} sub={d.caixa ? 'desde a abertura do caixa' : 'abra o caixa para medir'} dot="#138a5e" delay={0.02} />
-        <StatTile label="Comandas abertas" value={d.comandas.length} sub={`${brl(totalComandas)} em aberto`} dot="#2f6fd0" delay={0.07} />
-        <StatTile label="Ticket médio" value={brl(ticket)} sub="por comanda fechada hoje" dot="#f97316" delay={0.12} />
-        <StatTile label="Estoque em alerta" value={alertas.length} sub={alertas.length ? 'repor hoje' : 'tudo em dia'} dot={alertas.length ? '#d92d20' : '#138a5e'} delay={0.17} />
+        <StatTile label="Vendas do dia" value={brl(vendasDia)} sub={d.caixa ? 'desde a abertura do caixa' : 'abra o caixa para medir'} dot="#15705a" delay={0.02} />
+        <StatTile label="Comandas abertas" value={d.comandas.length} sub={`${brl(totalComandas)} em aberto`} dot="#1f5d7a" delay={0.07} />
+        <StatTile label="Ticket médio" value={brl(ticket)} sub="por comanda fechada hoje" dot="#c2601f" delay={0.12} />
+        <StatTile label="Estoque em alerta" value={alertas.length} sub={alertas.length ? 'repor hoje' : 'tudo em dia'} dot={alertas.length ? '#b32218' : '#15705a'} delay={0.17} />
       </div>
 
       <div className="grid grid-2">
@@ -148,7 +148,7 @@ export default function Dashboard() {
           {criticos.length ? (
             <div className="stack" style={{ gap: 15 }}>
               {criticos.map((i) => {
-                const cor = i.abaixo_do_minimo ? '#dc2626' : i.pct < 50 ? '#b45309' : '#0a9d6e'
+                const cor = i.abaixo_do_minimo ? '#b32218' : i.pct < 50 ? '#a9711a' : '#15705a'
                 return (
                   <div className="gauge" key={i.id}>
                     <div className="gl">
@@ -191,7 +191,7 @@ export default function Dashboard() {
                     <span className="mono muted">{brl(p.receita)} em {p.quantidade} un</span>
                   </div>
                   <div className="track">
-                    <motion.div className="bar" style={{ background: '#ea1d2c' }} initial={{ width: 0 }} animate={{ width: `${Math.max(4, (p.receita / max) * 100)}%` }} transition={{ duration: 0.6 }} />
+                    <motion.div className="bar" style={{ background: '#6e1a15' }} initial={{ width: 0 }} animate={{ width: `${Math.max(4, (p.receita / max) * 100)}%` }} transition={{ duration: 0.6 }} />
                   </div>
                 </div>
               )

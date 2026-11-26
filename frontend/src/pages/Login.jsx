@@ -2,29 +2,20 @@ import { useState } from 'react'
 import { Check, ArrowRight } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Spinner } from '../lib/ui'
+import Logo from '../components/Logo'
 
 const DEMOS = [
-  { nome: 'Gerente', email: 'gerente@restaurante.com', senha: 'gerente123', cor: '#ea1d2c' },
-  { nome: 'Caixa', email: 'caixa@restaurante.com', senha: 'caixa123', cor: '#2f6fd0' },
-  { nome: 'Garçom', email: 'garcom@restaurante.com', senha: 'garcom123', cor: '#138a5e' },
+  { nome: 'Gerente', email: 'gerente@restaurante.com', senha: 'gerente123', cor: '#6e1a15' },
+  { nome: 'Caixa', email: 'caixa@restaurante.com', senha: 'caixa123', cor: '#15705a' },
+  { nome: 'Garçom', email: 'garcom@restaurante.com', senha: 'garcom123', cor: '#a9711a' },
 ]
 
 const FEATS = [
-  'A comanda da mesa vai direto para o caixa',
+  'A pesagem do prato vira comanda na hora',
   'O estoque baixa sozinho e avisa quando falta',
   'O caixa bate com a gaveta e as maquininhas',
-  'O dia inteiro num painel, em tempo real',
+  'O movimento do almoço num painel, em tempo real',
 ]
-
-function Brand() {
-  return (
-    <div className="brand">
-      <div className="name">
-        Comanda<span>.</span>
-      </div>
-    </div>
-  )
-}
 
 export default function Login() {
   const { entrar } = useAuth()
@@ -54,11 +45,11 @@ export default function Login() {
   return (
     <div className="auth">
       <aside className="auth-aside">
-        <Brand />
-        <h2>Tudo do seu restaurante, num lugar só.</h2>
+        <Logo tone="light" size={44} />
+        <h2>O buffet inteiro, num lugar só.</h2>
         <p className="lead">
-          Comandas, estoque e caixa conversando entre si, do primeiro pedido ao fechamento
-          do dia.
+          Pesagem, comandas, estoque e caixa conversando entre si, do primeiro prato do
+          almoço ao fechamento do dia.
         </p>
         <ul className="feat-list">
           {FEATS.map((f) => (
@@ -74,7 +65,7 @@ export default function Login() {
 
       <div className="auth-form">
         <div className="auth-card">
-          <Brand />
+          <Logo size={40} />
           <h1>Entrar</h1>
           <p className="muted" style={{ marginBottom: 22, fontSize: 14 }}>
             Entre com seu e-mail e senha.

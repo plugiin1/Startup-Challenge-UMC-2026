@@ -4,7 +4,7 @@ import { api } from '../services/api'
 import { Modal, Spinner } from '../lib/ui'
 
 const PERFIS = ['CAIXA', 'GARCOM']
-const COR = { GERENTE: '#ea1d2c', CAIXA: '#2f6fd0', GARCOM: '#138a5e' }
+const COR = { GERENTE: '#6e1a15', CAIXA: '#1f5d7a', GARCOM: '#15705a' }
 const VAZIO = { nome: '', email: '', senha: '', perfil: 'GARCOM' }
 
 export default function Usuarios() {

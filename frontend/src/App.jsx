@@ -2,6 +2,7 @@ import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation } from 're
 import { motion } from 'framer-motion'
 import { LogOut } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import Logo from './components/Logo'
 import Caixa from './pages/Caixa'
 import Cardapio from './pages/Cardapio'
 import Comandas from './pages/Comandas'
@@ -26,9 +27,9 @@ const MENU = [
 ]
 
 const PERFIL_COR = {
-  GERENTE: '#ea1d2c',
-  CAIXA: '#2f6fd0',
-  GARCOM: '#138a5e',
+  GERENTE: '#6e1a15',
+  CAIXA: '#15705a',
+  GARCOM: '#a9711a',
 }
 
 function TopNav() {
@@ -40,11 +41,7 @@ function TopNav() {
   return (
     <header className="topnav">
       <div className="topnav-inner">
-        <div className="brand">
-          <div className="name">
-            Comanda<span>.</span>
-          </div>
-        </div>
+        <Logo size={32} />
 
         <nav className="nav">
           {itens.map((m) => {

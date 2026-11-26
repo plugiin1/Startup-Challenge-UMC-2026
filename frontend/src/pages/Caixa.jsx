@@ -138,7 +138,7 @@ export default function Caixa() {
             <p className="muted" style={{ fontSize: 14 }}>Abra o caixa para ver o resumo do dia.</p>
           ) : (
             <div>
-              <div style={{ background: 'var(--emerald-soft)', border: '1px solid #c9ead9', borderRadius: 12, padding: '14px 16px', marginBottom: 14 }}>
+              <div style={{ background: 'var(--emerald-soft)', border: '1px solid #cfe3d9', borderRadius: 12, padding: '14px 16px', marginBottom: 14 }}>
                 <span className="label" style={{ color: 'var(--emerald)', fontWeight: 600 }}>Total vendido</span>
                 <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>
                   {brl(relatorio.total_vendido)}
