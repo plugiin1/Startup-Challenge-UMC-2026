@@ -34,7 +34,7 @@ def me(usuario: Usuario = Depends(usuario_atual)) -> Usuario:
 @router.get("/usuarios", response_model=list[UsuarioOut])
 def listar_usuarios(
     db: Session = Depends(get_db),
-    _: Usuario = Depends(exigir_perfil("ADMIN")),
+    _: Usuario = Depends(exigir_perfil("GERENTE")),
 ) -> list[Usuario]:
     return db.query(Usuario).order_by(Usuario.nome).all()
 
@@ -42,7 +42,7 @@ def listar_usuarios(
 def criar_usuario(
     dados: UsuarioIn,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(exigir_perfil("ADMIN")),
+    _: Usuario = Depends(exigir_perfil("GERENTE")),
 ) -> Usuario:
     email = dados.email.lower()
     if db.query(Usuario).filter(Usuario.email == email).first():
@@ -58,3 +58,19 @@ def criar_usuario(
     db.commit()
     db.refresh(usuario)
     return usuario
+
+@router.patch("/usuarios/{usuario_id}", response_model=UsuarioOut)
+def alternar_usuario(
+    usuario_id: int,
+    db: Session = Depends(get_db),
+    gerente: Usuario = Depends(exigir_perfil("GERENTE")),
+) -> Usuario:
+    alvo = db.get(Usuario, usuario_id)
+    if alvo is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario nao encontrado")
+    if alvo.id == gerente.id:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Voce nao pode desativar a si mesmo")
+    alvo.ativo = not alvo.ativo
+    db.commit()
+    db.refresh(alvo)
+    return alvo
