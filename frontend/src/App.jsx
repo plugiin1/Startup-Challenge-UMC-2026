@@ -1,29 +1,27 @@
+import { useEffect, useState } from 'react'
 import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { LogOut } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { LogOut, Menu, X } from 'lucide-react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Logo from './components/Logo'
 import Caixa from './pages/Caixa'
 import Cardapio from './pages/Cardapio'
 import Comandas from './pages/Comandas'
 import Configuracoes from './pages/Configuracoes'
-import Dashboard from './pages/Dashboard'
 import Estoque from './pages/Estoque'
 import Login from './pages/Login'
 import Relatorios from './pages/Relatorios'
 import Usuarios from './pages/Usuarios'
 import { Spinner } from './lib/ui'
 
-const TODOS = ['GERENTE', 'CAIXA']
 const MENU = [
-  { path: '/dashboard', nome: 'Visão geral', perfis: TODOS },
   { path: '/comandas', nome: 'Comandas', perfis: ['GERENTE', 'CAIXA'] },
   { path: '/estoque', nome: 'Estoque', perfis: ['GERENTE', 'CAIXA'] },
   { path: '/caixa', nome: 'Caixa', perfis: ['GERENTE', 'CAIXA'] },
   { path: '/relatorios', nome: 'Relatórios', perfis: ['GERENTE', 'CAIXA'] },
   { path: '/cardapio', nome: 'Cardápio', perfis: ['GERENTE'] },
   { path: '/usuarios', nome: 'Usuários', perfis: ['GERENTE'] },
-  { path: '/config', nome: 'Config', perfis: ['GERENTE'] },
+  { path: '/config', nome: 'Configurações', perfis: ['GERENTE'] },
 ]
 
 const PERFIL_COR = {
@@ -34,29 +32,55 @@ const PERFIL_COR = {
 function TopNav() {
   const { usuario, sair } = useAuth()
   const { pathname } = useLocation()
+  const [aberto, setAberto] = useState(false)
   const itens = MENU.filter((m) => m.perfis.includes(usuario.perfil))
   const inicial = usuario.nome?.trim()?.[0]?.toUpperCase() || 'U'
+  const atual = itens.find((m) => m.path === pathname)
+
+  useEffect(() => {
+    setAberto(false)
+  }, [pathname])
 
   return (
     <header className="topnav">
       <div className="topnav-inner">
         <Logo size={32} />
 
-        <nav className="nav">
-          {itens.map((m) => {
-            const ativo = pathname === m.path
-            return (
-              <NavLink key={m.path} to={m.path} className={`nav-item ${ativo ? 'active' : ''}`}>
-                {ativo && (
-                  <motion.span layoutId="nav-active" className="active-bg" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />
-                )}
-                <span className="lbl">{m.nome}</span>
-              </NavLink>
-            )
-          })}
-        </nav>
-
         <div className="nav-user">
+          <div className="menu-wrap">
+            <button className={`menu-btn ${aberto ? 'on' : ''}`} onClick={() => setAberto((v) => !v)}>
+              {aberto ? <X size={18} /> : <Menu size={18} />}
+              <span>{atual?.nome || 'Menu'}</span>
+            </button>
+
+            <AnimatePresence>
+              {aberto && (
+                <>
+                  <motion.div
+                    className="menu-backdrop"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setAberto(false)}
+                  />
+                  <motion.nav
+                    className="menu-dropdown"
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    {itens.map((m) => (
+                      <NavLink key={m.path} to={m.path} className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
+                        {m.nome}
+                      </NavLink>
+                    ))}
+                  </motion.nav>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
           <div className="meta">
             <b>{usuario.nome}</b>
             <span>{usuario.perfil}</span>
@@ -85,14 +109,13 @@ function Rotas() {
     )
   if (!usuario) return <Login />
 
-  const inicial = '/dashboard'
+  const inicial = '/comandas'
 
   return (
     <div className="shell">
       <TopNav />
       <main className="content">
         <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/comandas" element={<Comandas />} />
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/caixa" element={<Caixa />} />
