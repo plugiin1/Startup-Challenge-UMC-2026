@@ -10,6 +10,7 @@ class InsumoIn(BaseModel):
     unidade: str = Field(default="UN", max_length=10)
     qtd_atual: float = 0
     qtd_minima: float = 0
+    ingrediente: bool = True
 
 class InsumoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -19,6 +20,7 @@ class InsumoOut(BaseModel):
     unidade: str
     qtd_atual: float
     qtd_minima: float
+    ingrediente: bool = True
 
     @computed_field
     @property

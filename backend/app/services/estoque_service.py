@@ -2,9 +2,29 @@ from sqlalchemy.orm import Session
 
 from app.models import Insumo, ItemComanda, MovEstoque
 
+def enviar_ao_buffet(db: Session, produto, usuario_id: int | None) -> None:
+    if produto is None or not produto.ficha:
+        return
+
+    for linha in produto.ficha:
+        insumo = db.get(Insumo, linha.insumo_id)
+        if insumo is None:
+            continue
+        qtd = float(linha.qtd_usada)
+        insumo.qtd_atual = float(insumo.qtd_atual) - qtd
+        db.add(
+            MovEstoque(
+                insumo_id=insumo.id,
+                tipo="SAIDA",
+                qtd=qtd,
+                observacao=f"Envio ao buffet - {produto.nome}",
+                usuario_id=usuario_id,
+            )
+        )
+
 def baixar_insumos_do_item(db: Session, item: ItemComanda, usuario_id: int | None) -> None:
     produto = item.produto
-    if produto is None or not produto.ficha:
+    if produto is None or not produto.ficha or produto.baixa_ao_ativar:
         return
 
     multiplicador = item.quantidade_cobrada

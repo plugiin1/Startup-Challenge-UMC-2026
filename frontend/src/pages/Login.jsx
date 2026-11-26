@@ -7,7 +7,6 @@ import Logo from '../components/Logo'
 const DEMOS = [
   { nome: 'Gerente', email: 'gerente@restaurante.com', senha: 'gerente123', cor: '#6e1a15' },
   { nome: 'Caixa', email: 'caixa@restaurante.com', senha: 'caixa123', cor: '#15705a' },
-  { nome: 'Garçom', email: 'garcom@restaurante.com', senha: 'garcom123', cor: '#a9711a' },
 ]
 
 const FEATS = [

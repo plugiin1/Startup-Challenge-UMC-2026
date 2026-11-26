@@ -6,11 +6,6 @@ export const brl = (v) =>
     ? '-'
     : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-export const mesaLabel = (m) => {
-  const s = String(m ?? '').trim()
-  return /^mesa\b/i.test(s) ? s : `Mesa ${s}`
-}
-
 export function Spinner({ className = '' }) {
   return <span className={`spinner ${className}`} />
 }

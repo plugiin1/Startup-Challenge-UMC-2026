@@ -13,13 +13,13 @@ class Comanda(Base):
     __tablename__ = "comandas"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    mesa: Mapped[str] = mapped_column(String(20))
-    cliente: Mapped[str | None] = mapped_column(String(120))
+    mesa: Mapped[str | None] = mapped_column(String(80))
+    cliente: Mapped[str | None] = mapped_column(String(80))
+    telefone: Mapped[str | None] = mapped_column(String(20))
     status: Mapped[str] = mapped_column(String(12), default="ABERTA", index=True)
     aberta_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     fechada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     usuario_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"))
-    taxa_servico: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
 
     itens: Mapped[list["ItemComanda"]] = relationship(
         back_populates="comanda", cascade="all, delete-orphan", order_by="ItemComanda.id"
@@ -28,11 +28,7 @@ class Comanda(Base):
 
     @property
     def total(self) -> float:
-        return float(sum(item.subtotal for item in self.itens))
-
-    @property
-    def total_com_taxa(self) -> float:
-        return round(self.total + float(self.taxa_servico or 0), 2)
+        return round(float(sum(item.subtotal for item in self.itens)), 2)
 
 class ItemComanda(Base):
     __tablename__ = "itens_comanda"

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -15,6 +15,7 @@ class Insumo(Base):
     unidade: Mapped[str] = mapped_column(String(10), default="UN")
     qtd_atual: Mapped[float] = mapped_column(Numeric(10, 3), default=0)
     qtd_minima: Mapped[float] = mapped_column(Numeric(10, 3), default=0)
+    ingrediente: Mapped[bool] = mapped_column(Boolean, default=True)
 
 class MovEstoque(Base):
     __tablename__ = "mov_estoque"

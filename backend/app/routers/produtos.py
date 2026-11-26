@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import exigir_perfil, usuario_atual
 from app.database import get_db
-from app.models import Categoria, Produto, Usuario
+from app.models import Categoria, ItemComanda, Produto, Usuario
 from app.schemas import CategoriaIn, CategoriaOut, ProdutoIn, ProdutoOut
+from app.services import estoque_service
 
 router = APIRouter(prefix="/produtos", tags=["cardapio"])
 
@@ -42,10 +43,13 @@ def listar_produtos(
 def criar_produto(
     dados: ProdutoIn,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(exigir_perfil("GERENTE")),
+    usuario: Usuario = Depends(exigir_perfil("GERENTE")),
 ) -> Produto:
     produto = Produto(**dados.model_dump())
     db.add(produto)
+    db.flush()
+    if produto.ativo and produto.baixa_ao_ativar:
+        estoque_service.enviar_ao_buffet(db, produto, usuario.id)
     db.commit()
     db.refresh(produto)
     return produto
@@ -55,20 +59,25 @@ def atualizar_produto(
     produto_id: int,
     dados: ProdutoIn,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(exigir_perfil("GERENTE")),
+    usuario: Usuario = Depends(exigir_perfil("GERENTE")),
 ) -> Produto:
     produto = db.get(Produto, produto_id)
     if produto is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Produto nao encontrado")
 
+    estava_ativo = produto.ativo
     for campo, valor in dados.model_dump().items():
         setattr(produto, campo, valor)
+
+    if produto.baixa_ao_ativar and produto.ativo and not estava_ativo:
+        estoque_service.enviar_ao_buffet(db, produto, usuario.id)
+
     db.commit()
     db.refresh(produto)
     return produto
 
 @router.delete("/{produto_id}", status_code=status.HTTP_204_NO_CONTENT)
-def desativar_produto(
+def excluir_produto(
     produto_id: int,
     db: Session = Depends(get_db),
     _: Usuario = Depends(exigir_perfil("GERENTE")),
@@ -76,5 +85,16 @@ def desativar_produto(
     produto = db.get(Produto, produto_id)
     if produto is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Produto nao encontrado")
-    produto.ativo = False
+
+    tem_vendas = (
+        db.query(ItemComanda.id).filter(ItemComanda.produto_id == produto_id).first()
+        is not None
+    )
+    if tem_vendas:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Este produto ja tem vendas registradas. Desative-o para tira-lo do cardapio sem perder os relatorios.",
+        )
+
+    db.delete(produto)
     db.commit()

@@ -24,7 +24,13 @@ async function request(path, { method = 'GET', body, form } = {}) {
   }
   if (!res.ok) {
     const erro = await res.json().catch(() => ({}))
-    throw new Error(erro.detail || `Erro ${res.status}`)
+    const detail = erro.detail
+    if (detail && typeof detail === 'object') {
+      const e = new Error(detail.mensagem || `Erro ${res.status}`)
+      e.code = detail.code
+      throw e
+    }
+    throw new Error(detail || `Erro ${res.status}`)
   }
   return res.status === 204 ? null : res.json()
 }
@@ -53,7 +59,10 @@ export const api = {
 
   ficha: (produtoId) => request(`/estoque/ficha/${produtoId}`),
   salvarFicha: (produtoId, dados) => request(`/estoque/ficha/${produtoId}`, { method: 'POST', body: dados }),
+  substituirFicha: (produtoId, itens) => request(`/estoque/ficha/${produtoId}`, { method: 'PUT', body: itens }),
   criarInsumo: (dados) => request('/estoque/insumos', { method: 'POST', body: dados }),
+  atualizarInsumo: (id, dados) => request(`/estoque/insumos/${id}`, { method: 'PUT', body: dados }),
+  removerInsumo: (id) => request(`/estoque/insumos/${id}`, { method: 'DELETE' }),
 
   relatorioVendas: (inicio, fim) => request(`/relatorios/vendas?inicio=${inicio}&fim=${fim}`),
   relatorioProdutos: (inicio, fim, limite = 10) =>
@@ -61,15 +70,15 @@ export const api = {
 
   comandas: (status = 'ABERTA') => request(`/comandas?status_filtro=${status}`),
   comanda: (id) => request(`/comandas/${id}`),
-  abrirComanda: (mesa, cliente) =>
-    request('/comandas', { method: 'POST', body: { mesa, cliente } }),
+  abrirComanda: (cliente, telefone) =>
+    request('/comandas', { method: 'POST', body: { cliente, telefone } }),
   lancarItem: (id, item) =>
     request(`/comandas/${id}/itens`, { method: 'POST', body: item }),
   removerItem: (id, itemId) =>
     request(`/comandas/${id}/itens/${itemId}`, { method: 'DELETE' }),
   cancelarComanda: (id) => request(`/comandas/${id}/cancelar`, { method: 'POST' }),
-  fecharComanda: (id, pagamentos, aplicar_taxa = true) =>
-    request(`/comandas/${id}/fechar`, { method: 'POST', body: { pagamentos, aplicar_taxa } }),
+  fecharComanda: (id, pagamentos) =>
+    request(`/comandas/${id}/fechar`, { method: 'POST', body: { pagamentos } }),
 
   insumos: () => request('/estoque/insumos'),
   alertasEstoque: () => request('/estoque/alertas'),
