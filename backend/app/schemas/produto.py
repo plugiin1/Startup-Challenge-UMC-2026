@@ -29,6 +29,7 @@ class ProdutoOut(BaseModel):
     preco: float
     tipo: TipoProduto
     ativo: bool
+    essencial: bool = False
     baixa_ao_ativar: bool = False
     categoria_id: int | None
     categoria: CategoriaOut | None = None

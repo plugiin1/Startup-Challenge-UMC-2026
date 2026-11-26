@@ -87,6 +87,7 @@ def atualizar_produto(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Produto nao encontrado")
 
     estava_ativo = produto.ativo
+    era_essencial = produto.essencial
     vai_ao_buffet = dados.baixa_ao_ativar and dados.ativo and not estava_ativo
 
     if vai_ao_buffet:
@@ -97,6 +98,9 @@ def atualizar_produto(
 
     for campo, valor in dados.model_dump().items():
         setattr(produto, campo, valor)
+
+    if era_essencial or produto.essencial:
+        produto.ativo = True
 
     if vai_ao_buffet:
         estoque_service.enviar_ao_buffet(db, produto, usuario.id)
@@ -114,6 +118,13 @@ def excluir_produto(
     produto = db.get(Produto, produto_id)
     if produto is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Produto nao encontrado")
+
+    if produto.essencial:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"{produto.nome} e um item fixo do cardapio e nao pode ser excluido. "
+            "Edite o preco quando tiver promocao.",
+        )
 
     tem_vendas = (
         db.query(ItemComanda.id).filter(ItemComanda.produto_id == produto_id).first()

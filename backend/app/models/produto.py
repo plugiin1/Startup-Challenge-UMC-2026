@@ -1,9 +1,13 @@
+import re
+
 from sqlalchemy import Boolean, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
 TIPOS_PRODUTO = ("UNIDADE", "KG")
+
+PADRAO_ESSENCIAL = re.compile(r"marmitex|embalagem", re.IGNORECASE)
 
 class Categoria(Base):
     __tablename__ = "categorias"
@@ -24,6 +28,10 @@ class Produto(Base):
     tipo: Mapped[str] = mapped_column(String(10), default="UNIDADE")
     ativo: Mapped[bool] = mapped_column(Boolean, default=True)
     baixa_ao_ativar: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    @property
+    def essencial(self) -> bool:
+        return self.tipo == "KG" or bool(PADRAO_ESSENCIAL.search(self.nome or ""))
 
     categoria: Mapped[Categoria | None] = relationship(back_populates="produtos")
     ficha: Mapped[list["FichaTecnica"]] = relationship(

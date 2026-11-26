@@ -1929,3 +1929,15 @@ label.field {
 .servidor-check.on b {
   color: var(--green);
 }
+
+.prod-card.fixo {
+  border-color: var(--border-2);
+  background: linear-gradient(180deg, var(--brand-soft) 0%, var(--surface) 50%);
+}
+.prod-fixo {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.35;
+  max-width: 190px;
+}

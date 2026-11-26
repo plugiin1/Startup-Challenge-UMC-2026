@@ -4,11 +4,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { Spinner } from '../lib/ui'
 import Logo from '../components/Logo'
 
-const DEMOS = [
-  { nome: 'Gerente', email: 'gerente@restaurante.com', senha: 'gerente123', cor: '#6e1a15' },
-  { nome: 'Caixa', email: 'caixa@restaurante.com', senha: 'caixa123', cor: '#15705a' },
-]
-
 const FEATS = [
   'A pesagem do prato vira comanda na hora',
   'O estoque baixa sozinho e avisa quando falta',
@@ -18,8 +13,8 @@ const FEATS = [
 
 export default function Login() {
   const { entrar } = useAuth()
-  const [email, setEmail] = useState('gerente@restaurante.com')
-  const [senha, setSenha] = useState('gerente123')
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
 
@@ -33,12 +28,6 @@ export default function Login() {
       setErro(err.message)
       setEnviando(false)
     }
-  }
-
-  const demo = (d) => {
-    setEmail(d.email)
-    setSenha(d.senha)
-    submeter(null, d.email, d.senha)
   }
 
   return (
@@ -86,16 +75,6 @@ export default function Login() {
               {enviando ? <Spinner /> : <>Entrar <ArrowRight size={17} /></>}
             </button>
           </form>
-
-          <div className="divider">ou teste com um perfil pronto</div>
-          <div className="quick-logins">
-            {DEMOS.map((d) => (
-              <button key={d.email} className="quick-login" onClick={() => demo(d)} disabled={enviando}>
-                <span className="qd" style={{ background: d.cor }} />
-                {d.nome}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     </div>

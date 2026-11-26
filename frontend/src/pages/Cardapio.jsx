@@ -262,13 +262,13 @@ export default function Cardapio() {
 
   const Card = ({ p }) => {
     const faltando = p.baixa_ao_ativar ? faltaEstoque(p) : []
-    const bloqueado = !p.ativo && faltando.length > 0
+    const bloqueado = !p.ativo && faltando.length > 0 && !p.essencial
     const linhas = fichas[p.id] || []
 
     return (
       <motion.article
         layout
-        className={`prod-card ${p.ativo ? 'on' : ''} ${bloqueado ? 'blocked' : ''}`}
+        className={`prod-card ${p.ativo ? 'on' : ''} ${p.essencial ? 'fixo' : ''} ${bloqueado ? 'blocked' : ''}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
@@ -282,7 +282,9 @@ export default function Cardapio() {
               <span className="muted prod-cat">{p.categoria?.nome || 'sem categoria'}</span>
             </div>
           </div>
-          <span className={`chip ${p.ativo ? 'ok' : 'neutral'}`}><span className="chip-dot" />{p.ativo ? 'no ar' : 'fora'}</span>
+          <span className={`chip ${p.essencial ? 'info' : p.ativo ? 'ok' : 'neutral'}`}>
+            <span className="chip-dot" />{p.essencial ? 'fixo' : p.ativo ? 'no ar' : 'fora'}
+          </span>
         </div>
 
         {p.baixa_ao_ativar && linhas.length > 0 && (
@@ -308,15 +310,24 @@ export default function Cardapio() {
         )}
 
         <div className="prod-acoes">
-          <button
-            className={`btn btn-sm ${p.ativo ? 'btn-danger' : 'btn-primary'}`}
-            onClick={() => clicarPower(p)}
-            disabled={bloqueado}
-          >
-            <Power size={14} /> {p.ativo ? 'Tirar do cardápio' : 'Ativar'}
-          </button>
-          <button className="btn btn-sm btn-ghost" onClick={() => abrirEdicao(p)}><Pencil size={14} /> Editar</button>
-          <button className="btn btn-sm btn-ghost danger" title="Excluir" onClick={() => excluir(p)}><Trash2 size={14} /></button>
+          {p.essencial ? (
+            <>
+              <span className="prod-fixo">Sempre no cardápio. Dá para mudar o preço na promoção.</span>
+              <button className="btn btn-sm btn-ghost" onClick={() => abrirEdicao(p)}><Pencil size={14} /> Editar</button>
+            </>
+          ) : (
+            <>
+              <button
+                className={`btn btn-sm ${p.ativo ? 'btn-danger' : 'btn-primary'}`}
+                onClick={() => clicarPower(p)}
+                disabled={bloqueado}
+              >
+                <Power size={14} /> {p.ativo ? 'Tirar do cardápio' : 'Ativar'}
+              </button>
+              <button className="btn btn-sm btn-ghost" onClick={() => abrirEdicao(p)}><Pencil size={14} /> Editar</button>
+              <button className="btn btn-sm btn-ghost danger" title="Excluir" onClick={() => excluir(p)}><Trash2 size={14} /></button>
+            </>
+          )}
         </div>
       </motion.article>
     )
