@@ -1,4 +1,5 @@
 from app.models.caixa import FORMAS_PAGAMENTO, STATUS_CAIXA, Caixa, Pagamento
+from app.models.config import Configuracao
 from app.models.comanda import STATUS_COMANDA, STATUS_COZINHA, Comanda, ItemComanda
 from app.models.estoque import TIPOS_MOVIMENTO, Insumo, MovEstoque
 from app.models.produto import TIPOS_PRODUTO, Categoria, FichaTecnica, Produto
@@ -14,6 +15,7 @@ __all__ = [
     "TIPOS_PRODUTO",
     "Caixa",
     "Categoria",
+    "Configuracao",
     "Comanda",
     "FichaTecnica",
     "Insumo",

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import auth, caixa, comandas, cozinha, estoque, produtos
+from app.routers import auth, caixa, comandas, config, cozinha, estoque, produtos, relatorios
 
 app = FastAPI(
     title="Gestao de Restaurante - API",
@@ -27,6 +27,8 @@ app.include_router(comandas.router)
 app.include_router(cozinha.router)
 app.include_router(estoque.router)
 app.include_router(caixa.router)
+app.include_router(config.router)
+app.include_router(relatorios.router)
 
 @app.get("/health", tags=["infra"])
 def health() -> dict[str, str]:
